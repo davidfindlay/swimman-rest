@@ -26,9 +26,13 @@ class Phone extends Model
 	 *
 	 * @var array
 	 */
-	protected $hidden = [];
+	protected $hidden = ['phonetype'];
 
 	// Existing table, no timestamps
 	public $timestamps = false;
+
+	public function type() {
+	    return $this->hasOne('App\PhoneType', 'phonetype', 'id');
+    }
 
 }

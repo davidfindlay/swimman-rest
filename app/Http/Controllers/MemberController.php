@@ -10,6 +10,7 @@ namespace App\Http\Controllers;
 
 use App\Member;
 
+use App\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -27,7 +28,6 @@ class MemberController extends Controller {
 	public function showOneMember($id)
 	{
 
-		// $id = $request->route()[2]['id'];
 		$user = $this->request->user();
 
 		Log::info($user->member . " - " . $id);
@@ -36,6 +36,10 @@ class MemberController extends Controller {
 
 			$member = Member::find( $id );
 			$memberships = $member->memberships;
+			$phones = $member->phones;
+			$emergency = $member->emergency;
+			$emergencyContact = Phone::find($emergency->phone_id);
+			$emergency['phonenumber'] = $emergencyContact->phonenumber;
 
 			foreach($memberships as $m) {
 				$club = $m->club;

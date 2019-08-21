@@ -17,13 +17,17 @@ $router->get('/', function () use ($router) {
 
 $router->group(['prefix' => 'api'], function () use ($router) {
 
-	$router->post('auth/login', ['uses' => 'AuthController@authenticate']);
+	$router->post('login', ['uses' => 'AuthController@login']);
+    $router->post('logout', ['uses' => 'AuthController@logout']);
+    $router->post('refresh', ['uses' => 'AuthController@refresh']);
 
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
 	$router->get('meets/{id}/events', ['uses' => 'MeetController@getEvents']);
 
-	$router->get('member/{id}', ['middleware' => 'auth', 'uses' => 'MemberController@showOneMember']);
+	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
+
+	$router->get('member/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMember']);
 
 	$router->get('sports_tg_members', ['uses' => 'SportsTGController@getMembers']);
 

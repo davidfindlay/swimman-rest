@@ -35,10 +35,23 @@ class Member extends Model
 	public $timestamps = false;
 
 	public function jUsers() {
-		return $this->hasMany('App\JUserLink', 'member_id', 'id');
+		return $this->hasMany('App\JUserLink', 'member_id   ', 'id');
 	}
 
 	public function memberships() {
 		return $this->hasMany('App\Membership', 'member_id', 'id');
 	}
+
+	public function phones() {
+	    return $this->belongsToMany('App\Phone', 'member_phones')
+            ->using('App\MemberPhones')
+            ->withPivot([
+                'member_id',
+                'phone_id'
+            ]);
+    }
+
+    public function emergency() {
+	    return $this->hasOne('App\MemberEmergencyContact', 'member_id', 'id');
+    }
 }

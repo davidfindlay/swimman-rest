@@ -1,18 +1,12 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: david
- * Date: 2/2/19
- * Time: 9:02 AM
- */
 
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Club extends Model
+class MemberEmergencyContactPhone extends Model
 {
-	protected $table = 'clubs';
+	protected $table = 'member_emerg_phones';
 
 	/**
 	 * The attributes that are mass assignable.
@@ -20,11 +14,8 @@ class Club extends Model
 	 * @var array
 	 */
 	protected $fillable = [
-		'code',
-		'clubname',
-		'postal',
-		'region',
-        'verified'
+		'member_emerg_id',
+        'phone_id'
 	];
 
 	/**
@@ -37,4 +28,7 @@ class Club extends Model
 	// Existing table, no timestamps
 	public $timestamps = false;
 
+    public function phone() {
+        return $this->hasOne('App\Phone', 'id', 'phone_id');
+    }
 }

@@ -39,8 +39,13 @@ class MeetEventGroup extends Model {
 		return $this->hasMany('App\MeetEventGroupItem', 'group_id', 'id');
 	}
 
-	public function ruleLink() {
-		return $this->hasOne('App\MeetRuleGroup', 'meet_events_groups_id', 'id');
-	}
+    public function rules() {
+        return $this->belongsToMany('App\MeetRule', 'meet_rules_groups')
+            ->using('App\MeetRuleGroup')
+            ->withPivot([
+                'meet_events_group_id',
+                'rule_id'
+            ]);
+    }
 
 }

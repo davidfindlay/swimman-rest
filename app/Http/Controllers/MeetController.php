@@ -42,35 +42,31 @@ class MeetController extends Controller {
 
 		$meetDetails = Meet::find($id);
 		$meetEvents = $meetDetails->events;
+
+		foreach ($meetEvents as $m) {
+		    $eventDistance = $m->distance;
+		    $eventDiscipline = $m->discipline;
+        }
+
 		$meetEventGroups = $meetDetails->groups;
 
 		$email = $meetDetails->email;
 		$phone = $meetDetails->phone;
-//		$emailaddress = $email->address;
+		$emailaddress = $email->address;
 
-//		$meetDetails['email'] = $emailaddress;
-//		$meetDetails['phone'] = $meetDetails->phone->phonenumber;
+		$meetDetails['sessions'] = $meetDetails->sessions;
 
-		$meetDetails['events'] = $meetEvents;
+		if (count($meetDetails->sessions) == 0) {
+            $meetDetails['events'] = $meetEvents;
+        }
 
 		foreach ($meetEventGroups as $g) {
 
-			$ruleLink = $g->ruleLink;
+		    $meetDetails['groups'];
 
-			if (isset($ruleLink)) {
-
-				$rule      = $ruleLink->rule;
-				$g['rule'] = $rule['rule'];
-
-			}
-
-			$g['events'] = $g->events;
-
-			unset($g['ruleLink']);
 
 		}
 
-		$meetDetails['eventGroups'] = $meetEventGroups;
 
 		return response()->json($meetDetails);
 	}

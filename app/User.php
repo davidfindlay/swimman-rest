@@ -23,11 +23,18 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
     protected $fillable = [
         'member',
 	    'username',
-	    'passwordhash',
+	    'password',
 	    'lastupdated',
 	    'firstname',
 	    'surname',
-	    'email'
+	    'email',
+        'dob',
+        'gender',
+        'phone',
+        'emergency_firstname',
+        'emergency_surname',
+        'emergency_phone',
+        'emergency_email'
     ];
 
     /**
@@ -38,6 +45,10 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
     protected $hidden = [
         'password',
     ];
+
+    public function username() {
+        return 'username';
+    }
 
 	// Existing table, no timestamps
 	public $timestamps = false;

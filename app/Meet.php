@@ -46,6 +46,11 @@ class Meet extends Model
 		return $this->hasMany('App\MeetEvent');
 	}
 
+	public function sessions()
+    {
+        return $this->hasMany('App\MeetSession');
+    }
+
 	public function groups()
 	{
 		return $this->hasMany('App\MeetEventGroup');

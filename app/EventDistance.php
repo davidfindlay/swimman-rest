@@ -1,18 +1,13 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: david
- * Date: 2/2/19
- * Time: 9:02 AM
- */
 
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Club extends Model
+class EventDistance extends Model
 {
-	protected $table = 'clubs';
+
+	protected $table = 'event_distances';
 
 	/**
 	 * The attributes that are mass assignable.
@@ -20,11 +15,10 @@ class Club extends Model
 	 * @var array
 	 */
 	protected $fillable = [
-		'code',
-		'clubname',
-		'postal',
-		'region',
-        'verified'
+		'distance',
+		'splits',
+		'metres',
+		'course'
 	];
 
 	/**
