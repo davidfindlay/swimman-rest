@@ -51,6 +51,15 @@ class Member extends Model
             ]);
     }
 
+    public function emails() {
+        return $this->belongsToMany('App\Email', 'member_emails')
+            ->using('App\MemberEmails')
+            ->withPivot([
+                'member_id',
+                'email_id'
+            ]);
+    }
+
     public function emergency() {
 	    return $this->hasOne('App\MemberEmergencyContact', 'member_id', 'id');
     }

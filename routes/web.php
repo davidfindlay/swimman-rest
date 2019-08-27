@@ -31,4 +31,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
 	$router->get('sports_tg_members', ['uses' => 'SportsTGController@getMembers']);
 
+	$router->post('entry_incomplete', ['uses' => 'MeetEntryController@createIncompleteEntry']);
+    $router->post('entry_finalise/{id}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
+    $router->put('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@updateIncompleteEntry']);
+
+    $router->delete('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@deleteIncompleteEntry']);
+    $router->get('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getIncompleteEntry']);
+    $router->get('entry_incomplete', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@index']);
+
 });

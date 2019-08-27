@@ -40,12 +40,8 @@ class MeetEventGroup extends Model {
 	}
 
     public function rules() {
-        return $this->belongsToMany('App\MeetRule', 'meet_rules_groups')
-            ->using('App\MeetRuleGroup')
-            ->withPivot([
-                'meet_events_group_id',
-                'rule_id'
-            ]);
+        return $this->belongsToMany('App\MeetRule', 'meet_rules_groups', 'meet_events_groups_id', 'rule_id')
+            ->withPivot(['meet_events_groups_id', 'rule_id']);
     }
 
 }

@@ -37,9 +37,13 @@ class MemberController extends Controller {
 			$member = Member::find( $id );
 			$memberships = $member->memberships;
 			$phones = $member->phones;
+            $emails = $member->emails;
 			$emergency = $member->emergency;
 			$emergencyContact = Phone::find($emergency->phone_id);
-			$emergency['phonenumber'] = $emergencyContact->phonenumber;
+
+			if ($emergencyContact != NULL) {
+			    $emergency['phonenumber'] = $emergencyContact->phonenumber;
+            }
 
 			foreach($memberships as $m) {
 				$club = $m->club;

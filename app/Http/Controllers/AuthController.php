@@ -150,24 +150,24 @@ class AuthController extends Controller
 
 			$newUser->dob = $member['dob'];
 
+            // Get most recent phone number
+            $newPhones = $member['phones'];
+            $numPhones = count($newPhones);
+            $newUser->phone = $newPhones[$numPhones - 1]['phonenumber'];
+
+            // Get most recent emergency contact
+            $newEmergency = $member['emergency'];
+
+            $newUser->emergency_firstname = $newEmergency->firstname;
+            $newUser->emergency_surname = $newEmergency->surname;
+            $newUser->emergency_phone = $newEmergency->phone->phonenumber;
+            $newUser->emergency_email = $newEmergency->email;
+
 		}
 
 		$newUser->username = $username;
 		$newUser->email = $email;
 		$newUser->password = $newPassword;
-
-		// Get most recent phone number
-		$newPhones = $member['phones'];
-		$numPhones = count($newPhones);
-		$newUser->phone = $newPhones[$numPhones - 1]['phonenumber'];
-
-		// Get most recent emergency contact
-        $newEmergency = $member['emergency'];
-
-        $newUser->emergency_firstname = $newEmergency->firstname;
-        $newUser->emergency_surname = $newEmergency->surname;
-        $newUser->emergency_phone = $newEmergency->phone->phonenumber;
-        $newUser->emergency_email = $newEmergency->email;
 
 		$newUser->save();
 

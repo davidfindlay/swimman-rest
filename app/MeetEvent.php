@@ -28,7 +28,7 @@ class MeetEvent extends Model
         'session_id',
         'exhibition',
         'freetime',
-        'timesrequired'
+        'times_required'
 	];
 
 	protected $with = [
