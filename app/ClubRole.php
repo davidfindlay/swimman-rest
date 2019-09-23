@@ -1,18 +1,12 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: david
- * Date: 2/2/19
- * Time: 9:02 AM
- */
 
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Membership extends Model
+class ClubRole extends Model
 {
-	protected $table = 'member_memberships';
+	protected $table = 'club_roles';
 
 	/**
 	 * The attributes that are mass assignable.
@@ -22,16 +16,8 @@ class Membership extends Model
 	protected $fillable = [
 		'member_id',
 		'club_id',
-		'type',
-		'status',
-		'startdate',
-		'enddate',
-		'status'
+		'role_id'
 	];
-
-	protected $with = [
-	    'membership_type'
-    ];
 
 	/**
 	 * The attributes excluded from the model's JSON form.
@@ -40,6 +26,10 @@ class Membership extends Model
 	 */
 	protected $hidden = [];
 
+	protected $with = [
+	    'role_type'
+    ];
+
 	// Existing table, no timestamps
 	public $timestamps = false;
 
@@ -47,7 +37,12 @@ class Membership extends Model
 		return $this->hasOne('App\Club', 'id', 'club_id');
 	}
 
-	public function membership_type() {
-	    return $this->hasOne('App\MembershipType', 'id', 'type');
+	public function member() {
+		return $this->hasOne('App\Member', 'id', 'member_id');
+	}
+
+    public function role_type() {
+        return $this->hasOne('App\ClubRoleType', 'id', 'role_id');
     }
+
 }

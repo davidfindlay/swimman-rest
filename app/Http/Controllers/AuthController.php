@@ -36,7 +36,7 @@ class AuthController extends Controller
         if (! $token = $this->guard()->attempt($credentials)) {
 
             if (! $this->importJUser($credentials)) {
-                return response()->json(['error' => 'Unnable to import user'], 401);
+                return response()->json(['error' => 'Unable to import user'], 401);
             } else {
                 $token = $this->guard()->attempt($credentials);
             }

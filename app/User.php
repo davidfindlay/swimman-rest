@@ -34,7 +34,8 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
         'emergency_firstname',
         'emergency_surname',
         'emergency_phone',
-        'emergency_email'
+        'emergency_email',
+        'is_admin'
     ];
 
     /**
@@ -50,8 +51,8 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
         return 'username';
     }
 
-	// Existing table, no timestamps
-	public $timestamps = false;
+	// Existing table, added timestamps
+	public $timestamps = true;
 
 	/**
 	 * Get the identifier that will be stored in the subject claim of the JWT.

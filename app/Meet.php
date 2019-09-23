@@ -64,4 +64,8 @@ class Meet extends Model
 		return $this->hasOne('App\Phone', 'id', 'contactphone');
 	}
 
+	public function paymentTypes() {
+	    return $this->hasMany('App\MeetPaymentMethod');
+    }
+
 }

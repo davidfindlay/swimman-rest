@@ -50,6 +50,12 @@ class MeetController extends Controller {
                     $g['rules'] = $g->rules;
                     $g['events'] = $g->events;
                 }
+
+                $meetPaymentMethods = $m->paymentTypes;
+
+                foreach ($meetPaymentMethods as $p) {
+                    $p->paymentType;
+                }
 			}
 
 
@@ -87,6 +93,12 @@ class MeetController extends Controller {
 		    $g['rules'] = $g->rules;
 		    $g['events'] = $g->events;
 		}
+
+        $meetPaymentMethods = $meetDetails->paymentTypes;
+
+        foreach ($meetPaymentMethods as $p) {
+            $p->paymentType;
+        }
 
 
 		return response()->json($meetDetails);

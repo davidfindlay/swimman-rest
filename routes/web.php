@@ -28,15 +28,36 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
 
 	$router->get('member/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMember']);
+    $router->get('member_by_number/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMemberByNumber']);
 
 	$router->get('sports_tg_members', ['uses' => 'SportsTGController@getMembers']);
 
 	$router->post('entry_incomplete', ['uses' => 'MeetEntryController@createIncompleteEntry']);
     $router->post('entry_finalise/{id}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
-    $router->put('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@updateIncompleteEntry']);
+    $router->put('entry_finalise/{id}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
+    $router->put('entry_incomplete/{id}', ['uses' => 'MeetEntryController@updateIncompleteEntry']);
 
     $router->delete('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@deleteIncompleteEntry']);
-    $router->get('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getIncompleteEntry']);
+    $router->get('entry_incomplete/{id}', ['uses' => 'MeetEntryController@getIncompleteEntry']);
     $router->get('entry_incomplete', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@index']);
+
+    $router->get('meet_entry_status_list', ['uses' => 'MeetEntryStatusController@getAll']);
+
+    $router->get('meet_entries', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntries']);
+    $router->get('meet_entry/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getMeetEntry']);
+
+    $router->get('meet_entries_by_member_number/{number}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntriesByMemberNumber']);
+
+    $router->get('meet_entries/{meetId}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntriesByMeet']);
+    $router->get('pending_entries/{meetId}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getPendingEntriesByMeet']);
+    $router->post('approve_pending/{pendingId}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@approve_pending']);
+
+    $router->post('create_payment_entry/{id}', ['uses' => 'PaypalController@createPaymentEntryById']);
+    $router->post('create_payment_incomplete/{id}', ['uses' => 'PaypalController@createPaymentIncompleteEntryById']);
+    $router->post('create_payment_entry', ['uses' => 'PaypalController@createPaymentEntry']);
+    $router->post('finalise_payment', ['uses' => 'PaypalController@finalisePayment']);
+
+    $router->post('users/register', ['uses' => 'UserController@register']);
+    $router->post('users/link_member/{memberNumber}', ['middleware' => 'auth:api', 'uses' => 'UserController@linkMember']);
 
 });

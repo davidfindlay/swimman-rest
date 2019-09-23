@@ -42,6 +42,14 @@ class Member extends Model
 		return $this->hasMany('App\Membership', 'member_id', 'id');
 	}
 
+	public function club_roles() {
+	    return $this->hasMany('App\ClubRole', 'member_id', 'id');
+    }
+
+    public function meet_access() {
+	    return $this->hasMany('App\MeetAccess', 'member_id', 'id');
+    }
+
 	public function phones() {
 	    return $this->belongsToMany('App\Phone', 'member_phones')
             ->using('App\MemberPhones')

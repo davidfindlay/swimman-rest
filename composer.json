@@ -11,7 +11,8 @@
         "firebase/php-jwt": "^5.0",
         "tymon/jwt-auth": "^1.0",
         "pear/http_request2": "^2.3",
-        "ext-json": "*"
+        "ext-json": "*",
+        "paypal/rest-api-sdk-php": "^1.14"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",

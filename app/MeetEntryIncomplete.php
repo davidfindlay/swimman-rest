@@ -20,7 +20,9 @@ class MeetEntryIncomplete extends Model
 		'user_id',
         'status_id',
         'member_id',
-		'entrydata'
+		'entrydata',
+        'pending_reason',
+        'code'
 	];
 
 	public function meet() {
@@ -32,7 +34,7 @@ class MeetEntryIncomplete extends Model
     }
 
     public function status() {
-        return $this->hasOne("App\EntryStatus", 'id', 'status_id');
+        return $this->hasOne("App\MeetEntryStatusCode", 'id', 'status_id');
     }
 
     public function member() {

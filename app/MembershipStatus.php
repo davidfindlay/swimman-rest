@@ -10,9 +10,9 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Membership extends Model
+class MembershipStatus extends Model
 {
-	protected $table = 'member_memberships';
+	protected $table = 'membership_statuses';
 
 	/**
 	 * The attributes that are mass assignable.
@@ -20,18 +20,8 @@ class Membership extends Model
 	 * @var array
 	 */
 	protected $fillable = [
-		'member_id',
-		'club_id',
-		'type',
-		'status',
-		'startdate',
-		'enddate',
-		'status'
+		'desc',
 	];
-
-	protected $with = [
-	    'membership_type'
-    ];
 
 	/**
 	 * The attributes excluded from the model's JSON form.
@@ -43,11 +33,4 @@ class Membership extends Model
 	// Existing table, no timestamps
 	public $timestamps = false;
 
-	public function club() {
-		return $this->hasOne('App\Club', 'id', 'club_id');
-	}
-
-	public function membership_type() {
-	    return $this->hasOne('App\MembershipType', 'id', 'type');
-    }
 }
