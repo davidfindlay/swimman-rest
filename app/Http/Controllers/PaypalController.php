@@ -61,6 +61,7 @@ class PaypalController extends Controller {
 
         $meetEntry = MeetEntry::find($id);
         $entryId = $meetEntry->id;
+        $entryCode = $meetEntry->code;
         $meetId = $meetEntry->meet_id;
         $meet = Meet::find($meetId);
         $meetName = $meet->meetname;
@@ -102,8 +103,8 @@ class PaypalController extends Controller {
         $redirectUrls = new RedirectUrls();
 //        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/enter/" . $meetId . "/confirmation?paypalsuccess=true")
 //                ->setCancelUrl(env('SITE_BASE', '') . "/enter/" . $meetId . "/confirmation?paypalsuccess=false");
-        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=true&meet_entry=" . $entryId)
-            ->setCancelUrl(env('SITE_BASE', '') . "/paypal-landing/paypalsuccess=false&meet_entry=" . $entryId);
+        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=true&meet_entry=" . $entryCode)
+            ->setCancelUrl(env('SITE_BASE', '') . "/paypal-landing/paypalsuccess=false&meet_entry=" . $entryCode);
 
 
         $payment = new Payment();
@@ -151,6 +152,7 @@ class PaypalController extends Controller {
         $entry = MeetEntryIncomplete::find($id);
         $entryId = $id;
         $meetId = $entry->meet_id;
+        $pendingCode = $entry->code;
         $meet = Meet::find($meetId);
         $meetName = $meet->meetname;
         $meetCost = $meet->meetfee;
@@ -184,7 +186,7 @@ class PaypalController extends Controller {
 
         $transaction->setAmount($amount)
             ->setItemList($itemList)
-            ->setDescription($meetName . " - Entry Pending")
+            ->setDescription($meetName . " - Entry Pending " . $entryId)
             ->setInvoiceNumber($invoiceId);
 
         //$baseUrl = "http://localhost:8888";
@@ -192,8 +194,8 @@ class PaypalController extends Controller {
 //        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/enter/" . $meetId . "/confirmation?paypalsuccess=true")
 //            ->setCancelUrl(env('SITE_BASE', '') . "/enter/" . $meetId . "/confirmation?paypalsuccess=false");
 
-        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=true&pending_entry=" . $entryId)
-            ->setCancelUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=false&pending_entry=" . $entryId);
+        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=true&pending_entry=" . $pendingCode)
+            ->setCancelUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=false&pending_entry=" . $pendingCode);
 
         $payment = new Payment();
         $payment->setIntent("sale")

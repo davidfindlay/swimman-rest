@@ -23,6 +23,7 @@ use App\AgeGroup;
 use App\PayPalPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use mysql_xdevapi\Exception;
 
 class MeetEntryController extends Controller {
 
@@ -75,21 +76,39 @@ class MeetEntryController extends Controller {
         $entry['status_description'] = $statusCode->description;
 
         // Generate an entry code for access to this entry
-//        if ($this->userId == NULL) {
-//            $entry['code'] = random_str(8);
-//
-//            $duplicateCheck = MeetEntryIncomplete::where('code', '=', $entry['code'])->all();
-//
-//
-//        }
+        $uniqueCode = false;
+        while (!$uniqueCode) {
+            $entry['code'] = $this->random_str(8);
+            $duplicateCheck = MeetEntryIncomplete::where('code', '=', $entry['code'])->get();
+            if (count($duplicateCheck) == 0) {
+                $uniqueCode = true;
+            }
+            //$uniqueCode = true;
+        }
 
         $entryObj = MeetEntryIncomplete::create($entry);
         $entryObj['entrydata'] = json_decode($entry['entrydata'], true);
         return response()->json($entryObj);
     }
 
-    public function updateIncompleteEntry($id) {
-        $entry = MeetEntryIncomplete::find($id);
+    function random_str(
+        $length = 64,
+        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyz'
+    ) {
+        $pieces = [];
+        $max = mb_strlen($keyspace, '8bit') - 1;
+        try {
+            for ($i = 0; $i < $length; ++$i) {
+                $pieces [] = $keyspace[random_int(0, $max)];
+            }
+        } catch (Exception $e) {
+            return null;
+        }
+        return implode('', $pieces);
+    }
+
+    public function updateIncompleteEntry($code) {
+        $entry = MeetEntryIncomplete::where('code', '=', $code)->first();
 
         if ($entry == NULL) {
             return response()->json('Unable to remove incomplete entry.', 404);
@@ -110,8 +129,9 @@ class MeetEntryController extends Controller {
 
         return response()->json($entry);
     }
-    public function deleteIncompleteEntry($id) {
-        $entry = MeetEntryIncomplete::find($id);
+
+    public function deleteIncompleteEntry($code) {
+        $entry = MeetEntryIncomplete::where('code', '=', $code)->first();
 
         if ($entry == NULL) {
             return response()->json('Unable to remove incomplete entry.', 404);
@@ -128,8 +148,8 @@ class MeetEntryController extends Controller {
         return response()->json('Removed successfully.');
     }
 
-    public function getIncompleteEntry($id) {
-        $entry = MeetEntryIncomplete::find($id);
+    public function getIncompleteEntry($code) {
+        $entry = MeetEntryIncomplete::where('code', '=', $code)->first();
 
         if ($entry == NULL) {
             return response()->json('Unable to get incomplete entry.', 404);
@@ -151,7 +171,8 @@ class MeetEntryController extends Controller {
     }
 
     public function index() {
-        $entry = MeetEntryIncomplete::where('user_id', '=', $this->userId)->get();
+        $entry = MeetEntryIncomplete::where('user_id', '=', $this->userId)
+            ->whereNull('finalised_at')->get();
         $outputEntries = array();
         foreach ($entry as $e) {
             $e->entrydata = json_decode($e->entrydata);
@@ -161,30 +182,31 @@ class MeetEntryController extends Controller {
         return response()->json($outputEntries);
     }
 
-    public function finaliseIncompleteEntry($id) {
-        $entry = MeetEntryIncomplete::find($id);
+    public function finaliseIncompleteEntry($code) {
+        $entry = MeetEntryIncomplete::where('code', '=', $code)->first();
         $status = 0;
 
         // If user is not logged in finalise to pending
-        if ($this->userId == null) {
-            $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
-            $entry->status_id = $pendingStatus->id;
-            $pendingReason = 'User not logged in, so entry set to pending.';
-            $entry->pending_reason = $pendingReason;
-            $entry->saveOrFail();
-            $entry->entrydata = json_decode($entry->entrydata, true);
-            return response()->json([
-                'pending_entry' => $entry,
-                'status_id' => $pendingStatus->id,
-                'explanation' => $pendingReason,
-                'status_label' => $pendingStatus->label,
-                'status_description' => $pendingStatus->description], 200);
-        }
+//        if ($this->userId == null) {
+//            $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+//            $entry->status_id = $pendingStatus->id;
+//            $pendingReason = 'User not logged in, so entry set to pending.';
+//            $entry->pending_reason = $pendingReason;
+//            $entry->saveOrFail();
+//            $entry->entrydata = json_decode($entry->entrydata, true);
+//            return response()->json([
+//                'pending_entry' => $entry,
+//                'status_id' => $pendingStatus->id,
+//                'explanation' => $pendingReason,
+//                'status_label' => $pendingStatus->label,
+//                'status_description' => $pendingStatus->description], 200);
+//        }
 
         $entryData = json_decode($entry['entrydata']);
 
         if ($entryData->membershipDetails != null) {
 
+            $entrantDetails = $entryData->entrantDetails;
             $membershipDetails = $entryData->membershipDetails;
 
             // User isn't an MSA member so don't try to create an entry for them
@@ -204,34 +226,67 @@ class MeetEntryController extends Controller {
 
             // If member number isn't set leave the entry as pending
             if ($membershipDetails->member_number == '') {
-                $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
-                $entry->status_id = $pendingStatus->id;
-                $pendingReason = 'Member number not provided, entry set to pending.';
-                $entry->pending_reason = $pendingReason;
-                $entry->saveOrFail();
-                $entry->entrydata = json_decode($entry->entrydata, true);
-                return response()->json(['pending_entry' => $entry,
-                    'status_id' => $pendingStatus->id,
-                    'explanation' => $pendingReason,
-                    'status_label' => $pendingStatus->label,
-                    'status_description' => $pendingStatus->description], 200);
+                $memberSearch = Member::where('surname', '=', $entrantDetails->entrantSurname)
+                    ->where('firstname', '=', $entrantDetails->entrantFirstName)
+                    ->where('dob', '=', $entrantDetails->entrantDob)
+                    ->first();
+
+                if ($memberSearch == NULL) {
+                    //
+                    $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+                    $entry->status_id = $pendingStatus->id;
+                    $pendingReason = 'Member number not provided, member not found.';
+                    $entry->pending_reason = $pendingReason;
+                    $entry->saveOrFail();
+                    $entry->entrydata = json_decode($entry->entrydata, true);
+                    return response()->json(['pending_entry' => $entry,
+                        'status_id' => $pendingStatus->id,
+                        'explanation' => $pendingReason,
+                        'status_label' => $pendingStatus->label,
+                        'status_description' => $pendingStatus->description], 200);
+                } else {
+                    $membershipDetails->member_number = intval($memberSearch->number);
+                    $entryData->membershipDetails = $membershipDetails;
+                    $entry->entrydata = json_encode($entryData);
+                }
+            } else {
+                $memberSearch = Member::where('number', '=', $membershipDetails->member_number)
+                    ->first();
+
+                if ($memberSearch->surname != $entrantDetails->entrantSurname ||
+                    $memberSearch->dob != $entrantDetails->entrantDob) {
+
+                    // Membership number supplied does not match entrant details
+                    $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+                    $entry->status_id = $pendingStatus->id;
+                    $pendingReason = 'Member number supplied does not match entrant details.';
+                    $entry->pending_reason = $pendingReason;
+                    $entry->saveOrFail();
+                    $entry->entrydata = json_decode($entry->entrydata, true);
+                    return response()->json(['pending_entry' => $entry,
+                        'status_id' => $pendingStatus->id,
+                        'explanation' => $pendingReason,
+                        'status_label' => $pendingStatus->label,
+                        'status_description' => $pendingStatus->description], 200);
+                }
             }
 
             $entryMemberId = Member::where('number', '=', $membershipDetails->member_number)->first();
 
-            if ($this->user->member != $entryMemberId->id) {
-                $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
-                $entry->status_id = $pendingStatus->id;
-                $pendingReason = 'User linked member doesn\'t match entry member.';
-                $entry->pending_reason = $pendingReason;
-                $entry->saveOrFail();
-                $entry->entrydata = json_decode($entry->entrydata, true);
-                return response()->json(['pending_entry' => $entry,
-                    'status_id' => $pendingStatus->id,
-                    'explanation' => $pendingReason,
-                    'status_label' => $pendingStatus->label,
-                    'status_description' => $pendingStatus->description], 200);
-            }
+            // Allow entries by anyone
+//            if ($this->user->member != $entryMemberId->id) {
+//                $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+//                $entry->status_id = $pendingStatus->id;
+//                $pendingReason = 'User linked member doesn\'t match entry member.';
+//                $entry->pending_reason = $pendingReason;
+//                $entry->saveOrFail();
+//                $entry->entrydata = json_decode($entry->entrydata, true);
+//                return response()->json(['pending_entry' => $entry,
+//                    'status_id' => $pendingStatus->id,
+//                    'explanation' => $pendingReason,
+//                    'status_label' => $pendingStatus->label,
+//                    'status_description' => $pendingStatus->description], 200);
+//            }
 
 //            return response()->json(['age' => $age,
 //                'gender' => $gender,
@@ -244,6 +299,8 @@ class MeetEntryController extends Controller {
                 && $entry->edit_mode) {
                 $editMode = true;
             }
+
+//            return response()->json(['pending_entry' => $entry], 200);
 
             return $this->createOrUpdateEntry($entry, $editMode);
 
@@ -263,6 +320,7 @@ class MeetEntryController extends Controller {
     private function createOrUpdateEntry($entry, $editMode) {
 
         $entryData = json_decode($entry['entrydata']);
+//        return response()->json(['entrydata' => $entryData], 400);
         $membershipDetails = $entryData->membershipDetails;
 
         $member = Member::where('number', '=', $membershipDetails->member_number)->first();
@@ -367,6 +425,7 @@ class MeetEntryController extends Controller {
             $meetEntry->club_id = $club->id;
         }
 
+        $meetEntry->code = $entry->code;
         $meetEntry->saveOrFail();
         $meetEntryId = $meetEntry->id;
 
@@ -477,9 +536,50 @@ class MeetEntryController extends Controller {
             }
         }
 
-        $entry->delete();
+        $entry->finalised_at = date('Y-m-d H:i:s');
+        $entry->saveOrFail();
 
         $statusCode = MeetEntryStatusCode::find($status);
+
+        $meetEntryCreated->member;
+        $meetEntryCreated->member->emergency;
+        if ($meetEntryCreated->member->emergency != NULL) {
+            $meetEntryCreated->member->emergency->phone;
+        }
+        $meetEntryCreated->member->phones;
+        $meetEntryCreated->member->emails;
+        $meetEntryCreated->member->memberships;
+
+        $status = MeetEntryStatus::where('entry_id', '=', $meetEntryCreated->id)
+            ->orderBy('id', 'DESC')
+            ->first();
+        if ($status != NULL) {
+            $status->status;
+            $meetEntryCreated['status'] = $status;
+        }
+
+        if ($meetEntryCreated->disability_s_id != NULL) {
+            $meetEntryCreated->disability_s;
+        }
+        if ($meetEntryCreated->disability_sb_id != NULL) {
+            $meetEntryCreated->disability_sb;
+        }
+        if ($meetEntryCreated->disability_sm_id != NULL) {
+            $meetEntryCreated->disability_sm;
+        }
+
+        if ($meetEntryCreated->club_id !== NULL) {
+            $meetEntryCreated->club;
+        }
+
+        $meetEntryCreated->age_group;
+        $meetEntryCreated->meet;
+        $meetEntryCreated->events;
+        $meetEntryCreated->payments;
+
+        foreach($meetEntryCreated->events as $e) {
+            $e->event;
+        }
 
         return response()->json(['meet_entry' => $meetEntryCreated,
             'status_id' => $status,
@@ -579,7 +679,8 @@ class MeetEntryController extends Controller {
         $statusIncomplete = MeetEntryStatusCode::where('label', '=', 'Incomplete')->first()->id;
 
         $entries = MeetEntryIncomplete::where('meet_id', '=', $meetId)
-            ->where('status_id', '!=', $statusIncomplete)->get();
+            ->where('status_id', '!=', $statusIncomplete)
+            ->whereNull('finalised_at')->get();
 
         foreach ($entries as $entry) {
             $entry->entrydata = json_decode($entry->entrydata, true);
@@ -591,13 +692,31 @@ class MeetEntryController extends Controller {
 
     }
 
-    public function getMeetEntry($id) {
+    public function getMeetEntryByCode($code) {
+        $entry = MeetEntry::where('code', '=', $code)->first();
+        return $this->getMeetEntryReturn($entry);
+    }
+
+    public function getMeetEntry($id)
+    {
         $entry = MeetEntry::find($id);
 
-        if ($this->user->member !== $entry->member_id) {
+        if ($this->user == NULL) {
             return response()->json(['success' => false,
-                'message' => 'You can only access your entries'], 403);
+                'message' => 'Unauthorised.'], 403);
         }
+
+        if ($entry->user_id != NULL && !$this->user->is_admin) {
+            if ($this->user->member !== $entry->member_id) {
+                return response()->json(['success' => false,
+                    'message' => 'You can only access your entries'], 403);
+            }
+        }
+
+        return $this->getMeetEntryReturn($entry);
+    }
+
+    private function getMeetEntryReturn($entry) {
 
         $entry->member;
         $entry->member->emergency;
@@ -641,8 +760,6 @@ class MeetEntryController extends Controller {
 
         return response()->json(['success' => true,
             'meet_entry' => $entry]);
-
-
     }
 
     public function getSubmittedEntriesByMemberNumber($number) {
@@ -717,5 +834,23 @@ class MeetEntryController extends Controller {
         }
 
         return $this->createOrUpdateEntry($entry, false);
+    }
+
+    public function processed_pending($pendingId) {
+        if ($this->user->is_admin != 1) {
+            return response()->json(['success' => false,
+                'message' => 'You do not have permission to view Meet Entries.'], 403);
+        }
+
+        $entry = MeetEntryIncomplete::find($pendingId);
+        if ($entry == NULL) {
+            return response()->json(['success' => false,
+                'message' => 'Unable to find this pending meet entry.'], 404);
+        }
+
+        $entry->finalised_at =  date('Y-m-d H:i:s');
+        $entry->saveOrFail();
+        return response()->json(['success' => true,
+            'entry' => $entry], 200);
     }
 }

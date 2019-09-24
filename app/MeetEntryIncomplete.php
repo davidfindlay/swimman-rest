@@ -22,7 +22,8 @@ class MeetEntryIncomplete extends Model
         'member_id',
 		'entrydata',
         'pending_reason',
-        'code'
+        'code',
+        'finalised_at'
 	];
 
 	public function meet() {

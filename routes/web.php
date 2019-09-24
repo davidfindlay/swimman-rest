@@ -33,18 +33,20 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 	$router->get('sports_tg_members', ['uses' => 'SportsTGController@getMembers']);
 
 	$router->post('entry_incomplete', ['uses' => 'MeetEntryController@createIncompleteEntry']);
-    $router->post('entry_finalise/{id}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
-    $router->put('entry_finalise/{id}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
-    $router->put('entry_incomplete/{id}', ['uses' => 'MeetEntryController@updateIncompleteEntry']);
+    $router->post('entry_finalise/{code}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
+    $router->put('entry_finalise/{code}', ['uses' => 'MeetEntryController@finaliseIncompleteEntry']);
+    $router->put('entry_incomplete/{code}', ['uses' => 'MeetEntryController@updateIncompleteEntry']);
+    $router->post('entry_incomplete_processed/{id}', ['uses' => 'MeetEntryController@processed_pending']);
 
     $router->delete('entry_incomplete/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@deleteIncompleteEntry']);
-    $router->get('entry_incomplete/{id}', ['uses' => 'MeetEntryController@getIncompleteEntry']);
+    $router->get('entry_incomplete/{code}', ['uses' => 'MeetEntryController@getIncompleteEntry']);
     $router->get('entry_incomplete', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@index']);
 
     $router->get('meet_entry_status_list', ['uses' => 'MeetEntryStatusController@getAll']);
 
     $router->get('meet_entries', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntries']);
     $router->get('meet_entry/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getMeetEntry']);
+    $router->get('meet_entry_by_code/{id}', ['uses' => 'MeetEntryController@getMeetEntryByCode']);
 
     $router->get('meet_entries_by_member_number/{number}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntriesByMemberNumber']);
 
