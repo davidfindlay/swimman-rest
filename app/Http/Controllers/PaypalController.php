@@ -290,6 +290,14 @@ class PaypalController extends Controller {
         $entryId = $paypalPayment->meet_entry_id;
         $incompleteId = $paypalPayment->meet_entries_incomplete_id;
 
+        if ($paypalPayment == null) {
+            return response()->json([
+                'success' => false,
+                'paypalPayment' => $paypalPayment,
+                'paid' => $paidAmount,
+                'message' => 'PayPal Payment already finalised'], 400);
+        }
+
         if ($entryId != NULL) {
 
             // Load the entry and record payment
@@ -349,9 +357,10 @@ class PaypalController extends Controller {
         }
 
         return response()->json([
+            'success' => false,
             'paypalPayment' => $paypalPayment,
             'paid' => $paidAmount,
-            'message' => 'Unable to update entry'], 200);
+            'message' => 'Unable to update entry'], 400);
 
     }
 
@@ -367,9 +376,16 @@ class PaypalController extends Controller {
 //                " for entrant " . $this->payerName . " <" . $this->payerEmail . ">");
 
         // Update table
+        if ($paypalPayment->paid != NULL) {
+            // Already finalised
+            return null;
+        }
+
         $paypalPayment->paid = $paidAmount;
         $paypalPayment->payer_name = $payerName;
         $paypalPayment->payer_email = $payerEmail;
+        // TODO: link meet entry payment
+
         $paypalPayment->saveOrFail();
 
         return $paypalPayment;
