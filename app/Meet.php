@@ -28,7 +28,9 @@ class Meet extends Model
 		'mealsincluded',
 		'mealname',
 		'massagefee',
-		'programfee'
+		'programfee',
+        'meetfee_non_member',
+        'minevents'
 	];
 
 	/**
