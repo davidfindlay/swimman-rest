@@ -143,7 +143,9 @@ class MeetEntryController extends Controller {
             }
         }
 
-        $entry->delete();
+        $cancelledStatus = MeetEntryStatusCode::where('label', '=', 'Cancelled')->first();
+        $entry->status_id = $cancelledStatus->id;
+        $entry->saveOrFail();
 
         return response()->json('Removed successfully.');
     }
@@ -155,7 +157,7 @@ class MeetEntryController extends Controller {
             return response()->json('Unable to get incomplete entry.', 404);
         }
 
-        if ($entry->user_id != NULL && !$this->user->is_admin) {
+        if ($entry->user_id != NULL && $this->user != NULL && !$this->user->is_admin) {
             if ($this->userId != intval($entry->user_id)) {
                 return response()->json(['error' => "You cannot get an entry for another user "], 403);
             }
@@ -342,9 +344,12 @@ class MeetEntryController extends Controller {
                 $entry->pending_reason = $pendingReason;
                 $entry->saveOrFail();
                 $entry->entrydata = json_decode($entry->entrydata, true);
+                $entry->status;
                 return response()->json(['pending_entry' => $entry,
                     'status_id' => $pendingStatus->id,
-                    'explanation' => $pendingReason], 200);
+                    'explanation' => $pendingReason,
+                    'status_label' => $pendingStatus->label,
+                    'status_description' => $pendingStatus->description], 200);
             }
         }
 
@@ -717,6 +722,10 @@ class MeetEntryController extends Controller {
     }
 
     private function getMeetEntryReturn($entry) {
+
+        if ($entry == null) {
+            return null;
+        }
 
         $entry->member;
         $entry->member->emergency;

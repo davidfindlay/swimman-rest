@@ -26,6 +26,10 @@ class MeetEntryIncomplete extends Model
         'finalised_at'
 	];
 
+//	protected $with = [
+//	    'status'
+//    ];
+
 	public function meet() {
 	    return $this->hasOne("App\Meet", 'id', 'meet_id');
     }

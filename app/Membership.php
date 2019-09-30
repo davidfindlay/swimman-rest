@@ -43,6 +43,10 @@ class Membership extends Model
 	// Existing table, no timestamps
 	public $timestamps = false;
 
+	public function member() {
+	    return $this->hasOne('App\Member', 'id', 'member_id');
+    }
+
 	public function club() {
 		return $this->hasOne('App\Club', 'id', 'club_id');
 	}

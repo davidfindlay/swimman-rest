@@ -26,6 +26,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 	$router->get('meets/{id}/events', ['uses' => 'MeetController@getEvents']);
 
 	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
+	$router->get('club/{id}/members', ['middleware' => 'auth:api', 'uses' => 'ClubController@getMembers']);
 
 	$router->get('member/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMember']);
     $router->get('member_by_number/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMemberByNumber']);
