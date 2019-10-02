@@ -114,7 +114,7 @@ class MeetEntryController extends Controller {
             return response()->json('Unable to remove incomplete entry.', 404);
         }
 
-        if ($entry->user_id != NULL && !$this->user->is_admin) {
+        if ($entry->user_id != NULL && !$this->isAdmin()) {
             if ($this->userId != intval($entry->user_id)) {
                 return response()->json(['error' => "You cannot edit an entry for another user "], 403);
             }
@@ -128,6 +128,18 @@ class MeetEntryController extends Controller {
         $entry['status_description'] = $statusCode->description;
 
         return response()->json($entry);
+    }
+
+    private function isAdmin() {
+        if ($this->user) {
+            if ($this->user->is_admin) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 
     public function deleteIncompleteEntry($code) {
@@ -255,13 +267,12 @@ class MeetEntryController extends Controller {
                 $memberSearch = Member::where('number', '=', $membershipDetails->member_number)
                     ->first();
 
-                if ($memberSearch->surname != $entrantDetails->entrantSurname ||
-                    $memberSearch->dob != $entrantDetails->entrantDob) {
+                if (!isset($memberSearch)) {
 
                     // Membership number supplied does not match entrant details
                     $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
                     $entry->status_id = $pendingStatus->id;
-                    $pendingReason = 'Member number supplied does not match entrant details.';
+                    $pendingReason = 'Member number supplied not found.';
                     $entry->pending_reason = $pendingReason;
                     $entry->saveOrFail();
                     $entry->entrydata = json_decode($entry->entrydata, true);
@@ -270,6 +281,25 @@ class MeetEntryController extends Controller {
                         'explanation' => $pendingReason,
                         'status_label' => $pendingStatus->label,
                         'status_description' => $pendingStatus->description], 200);
+
+                } else {
+
+                    if ($memberSearch->surname != $entrantDetails->entrantSurname ||
+                        $memberSearch->dob != $entrantDetails->entrantDob) {
+
+                        // Membership number supplied does not match entrant details
+                        $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+                        $entry->status_id = $pendingStatus->id;
+                        $pendingReason = 'Member number supplied does not match entrant details.';
+                        $entry->pending_reason = $pendingReason;
+                        $entry->saveOrFail();
+                        $entry->entrydata = json_decode($entry->entrydata, true);
+                        return response()->json(['pending_entry' => $entry,
+                            'status_id' => $pendingStatus->id,
+                            'explanation' => $pendingReason,
+                            'status_label' => $pendingStatus->label,
+                            'status_description' => $pendingStatus->description], 200);
+                    }
                 }
             }
 
@@ -371,9 +401,9 @@ class MeetEntryController extends Controller {
         $meetEntry->meals = 0;
         $meetEntry->cancelled = 0;
 
-        // TODO: improve the handling of meet entry cost
+        // Determine entry cost
         $meetDetails = Meet::where('id', '=', $entryData->meetId)->first();
-        $meetEntry->cost = $meetDetails->meetfee;
+        $meetEntry->cost = $this->calculateEntryFee($meetEntry, $entryData, $meetDetails);
 
         // Disability
         $classified = 0;
@@ -592,6 +622,22 @@ class MeetEntryController extends Controller {
             'status_description' => $statusCode->description], 200);
     }
 
+    private function calculateEntryFee($meetEntry, $entryData, $meetDetails) {
+        $entryCost = 0;
+
+        $entryCost += $meetDetails->meetfee;
+
+        foreach ($entryData->entryEvents as $eventEntry) {
+            foreach ($meetDetails->events as $e) {
+                if ($e->id == $eventEntry->event_id) {
+                    $entryCost += $e->eventfee;
+                }
+            }
+        }
+
+        return $entryCost;
+    }
+
     public function getSubmittedEntries() {
         $entries = MeetEntry::where('member_id', '=', $this->user->member)->get();
 
@@ -683,9 +729,7 @@ class MeetEntryController extends Controller {
 
         $statusIncomplete = MeetEntryStatusCode::where('label', '=', 'Incomplete')->first()->id;
 
-        $entries = MeetEntryIncomplete::where('meet_id', '=', $meetId)
-            ->where('status_id', '!=', $statusIncomplete)
-            ->whereNull('finalised_at')->get();
+        $entries = MeetEntryIncomplete::where('meet_id', '=', $meetId)->get();
 
         foreach ($entries as $entry) {
             $entry->entrydata = json_decode($entry->entrydata, true);
