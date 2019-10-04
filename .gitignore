@@ -3,6 +3,12 @@
 Homestead.json
 Homestead.yaml
 .env
+.env.example
+.env-bak
+.env-local
+.env-prod
+.env-test
+*.log
 ### Composer template
 composer.phar
 /vendor/
