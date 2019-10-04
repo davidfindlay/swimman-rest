@@ -77,6 +77,7 @@ $app->middleware([
 // $app->register(App\Providers\AuthServiceProvider::class);
 // $app->register(App\Providers\EventServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
+$app->register('Sentry\Laravel\ServiceProvider');
 /*
 |--------------------------------------------------------------------------
 | Load The Application Routes

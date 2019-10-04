@@ -60,6 +60,26 @@ class PaypalController extends Controller {
     public function createPaymentEntryById($id) {
 
         $meetEntry = MeetEntry::find($id);
+
+        // Check if entry is already fully paid
+        $existingPayments = $meetEntry->payments;
+        $alreadyPaid = 0;
+        if (isset($existingPayments)) {
+            foreach ($existingPayments as $p) {
+                $alreadyPaid += $p->amount;
+            }
+        }
+
+        if ($alreadyPaid >= $meetEntry->cost) {
+            Log::error('Attempt to pay for entry that is already fully paid. Entry Id: ' . $id . ', Entry Cost:'
+                . $meetEntry->cost . ', Already Paid: ' . $alreadyPaid);
+            return response()->json([
+                'success' => false,
+                'paid' => $alreadyPaid,
+                'message' => 'Your entry is already fully paid'], 200);
+
+        }
+
         $entryId = $meetEntry->id;
         $entryCode = $meetEntry->code;
         $meetId = $meetEntry->meet_id;
@@ -68,7 +88,6 @@ class PaypalController extends Controller {
 
         // Get entry cost
         // TODO: itemisation
-        $entryCost = $meetEntry->cost;
         $meetCost = $meet->meetfee;
 
         $payer = new Payer();
@@ -82,7 +101,7 @@ class PaypalController extends Controller {
             $objItem = new Item();
             $objItem->setName('Meet Fee');
             $objItem->setQuantity(1);
-            $objItem->setPrice($entryCost);
+            $objItem->setPrice($meetEntry->cost);
             $objItem->setCurrency("AUD");
 
             $arrItems[] = $objItem;
@@ -93,7 +112,7 @@ class PaypalController extends Controller {
 
         $amount = new Amount();
         $amount->setCurrency("AUD")
-            ->setTotal($entryCost);
+            ->setTotal($meetEntry->cost);
 
         $transaction = new Transaction();
         $invoiceId = uniqid();
@@ -130,22 +149,28 @@ class PaypalController extends Controller {
             $paymentInfo = array("meet_entry_id" => $entryId,
                 "invoice_id" => $invoiceId);
 
+            Log::debug('Attempting to create PayPalPayment object for entry: ' . $entryId .
+                ', invoice id: ' . $invoiceId);
+
             $paypalPayment = PayPalPayment::create($paymentInfo);
 
+            Log::info('PayPalPayment successfully created for entry: ' . $entryId . ', invoice id: ' . $invoiceId);
 
         } catch (Exception $ex) {
 
 //            $this->logger->error("Payment Creation Exception: " . $ex);
             $approvalUrl = 'error';
 
-            Log::error($ex);
+            Log::error('Exception while trying to create payment', $ex);
 
             return response()->json([
+                'success' => false,
                 'exception' => $ex->getMessage()], 500);
 
         }
 
         return response()->json([
+            'success' => true,
             'payment' => $paypalPayment,
             'approvalUrl' => $approvalUrl], 200);
 

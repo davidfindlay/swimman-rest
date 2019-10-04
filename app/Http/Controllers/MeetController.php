@@ -38,7 +38,10 @@ class MeetController extends Controller {
 
                 $email = $m->email;
                 $phone = $m->phone;
-                $emailaddress = $email->address;
+
+                if (isset($email)) {
+                    $emailaddress = $email->address;
+                }
 
                 $meetDetails['sessions'] = $m->sessions;
 
@@ -81,7 +84,9 @@ class MeetController extends Controller {
 
 		$email = $meetDetails->email;
 		$phone = $meetDetails->phone;
-		$emailaddress = $email->address;
+		if (isset($email)) {
+            $emailaddress = $email->address;
+        }
 
 		$meetDetails['sessions'] = $meetDetails->sessions;
 

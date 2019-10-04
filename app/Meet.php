@@ -29,7 +29,7 @@ class Meet extends Model
 		'mealname',
 		'massagefee',
 		'programfee',
-        'meetfee_non_member',
+        'meetfee_nonmember',
         'minevents'
 	];
 
