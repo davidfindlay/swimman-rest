@@ -65,6 +65,10 @@ class PaypalController extends Controller {
         $meetId = $meetEntry->meet_id;
         $meet = Meet::find($meetId);
         $meetName = $meet->meetname;
+
+        // Get entry cost
+        // TODO: itemisation
+        $entryCost = $meetEntry->cost;
         $meetCost = $meet->meetfee;
 
         $payer = new Payer();
@@ -78,7 +82,7 @@ class PaypalController extends Controller {
             $objItem = new Item();
             $objItem->setName('Meet Fee');
             $objItem->setQuantity(1);
-            $objItem->setPrice($meetCost);
+            $objItem->setPrice($entryCost);
             $objItem->setCurrency("AUD");
 
             $arrItems[] = $objItem;
@@ -89,7 +93,7 @@ class PaypalController extends Controller {
 
         $amount = new Amount();
         $amount->setCurrency("AUD")
-            ->setTotal($meetCost);
+            ->setTotal($entryCost);
 
         $transaction = new Transaction();
         $invoiceId = uniqid();
@@ -152,10 +156,33 @@ class PaypalController extends Controller {
         $entry = MeetEntryIncomplete::find($id);
         $entryId = $id;
         $meetId = $entry->meet_id;
+        $entryData = json_decode($entry->entrydata);
         $pendingCode = $entry->code;
         $meet = Meet::find($meetId);
         $meetName = $meet->meetname;
-        $meetCost = $meet->meetfee;
+
+        if ($entryData->membershipDetails->member_type === 'msa'
+            || $entryData->membershipDetails->member_type === 'international') {
+            $meetCost = $meet->meetfee;
+        } else {
+            $meetCost = $meet->meetfee_non_member;
+        }
+
+        $eventCost = 0;
+        foreach ($entryData->entryEvents as $eventEntry) {
+            foreach ($meet->events as $e) {
+                if ($e->id == $eventEntry->event_id) {
+                    if ($entryData->membershipDetails->member_type === 'msa'
+                        || $entryData->membershipDetails->member_type === 'international') {
+                        $eventCost += $e->eventfee;
+                    } else {
+                        $eventCost += $e->eventfee_non_member;
+                    }
+                }
+            }
+        }
+
+        $entryCost = $meetCost + $eventCost;
 
         $payer = new Payer();
         $payer->setPaymentMethod("paypal");
@@ -168,7 +195,7 @@ class PaypalController extends Controller {
         $objItem = new Item();
         $objItem->setName('Meet Fee');
         $objItem->setQuantity(1);
-        $objItem->setPrice($meetCost);
+        $objItem->setPrice($entryCost);
         $objItem->setCurrency("AUD");
 
         $arrItems[] = $objItem;
@@ -179,7 +206,7 @@ class PaypalController extends Controller {
 
         $amount = new Amount();
         $amount->setCurrency("AUD")
-            ->setTotal($meetCost);
+            ->setTotal($entryCost);
 
         $transaction = new Transaction();
         $invoiceId = uniqid();
@@ -287,16 +314,16 @@ class PaypalController extends Controller {
 
         $paypalPayment = $this->updatePaypalPayment($paypalPayment, $payment, $paidAmount);
 
-        $entryId = $paypalPayment->meet_entry_id;
-        $incompleteId = $paypalPayment->meet_entries_incomplete_id;
-
         if ($paypalPayment == null) {
             return response()->json([
                 'success' => false,
                 'paypalPayment' => $paypalPayment,
                 'paid' => $paidAmount,
-                'message' => 'PayPal Payment already finalised'], 400);
+                'message' => 'PayPal Payment already finalised'], 200);
         }
+
+        $entryId = $paypalPayment->meet_entry_id;
+        $incompleteId = $paypalPayment->meet_entries_incomplete_id;
 
         if ($entryId != NULL) {
 
@@ -326,6 +353,8 @@ class PaypalController extends Controller {
                 'paypalPayment' => $paypalPayment,
                 'meetEntryPayment' => $meetEntryPayment,
                 'status' => $acceptedStatus->id,
+                'status_label' => $acceptedStatus->label,
+                'status_description' => $acceptedStatus->description,
                 'paid' => $paidAmount], 200);
 
         }
@@ -353,6 +382,8 @@ class PaypalController extends Controller {
                 'paypalPayment' => $paypalPayment,
                 'incompleteEntry' => $incompleteEntry,
                 'status' => $acceptedStatus->id,
+                'status_label' => $acceptedStatus->label,
+                'status_description' => $acceptedStatus->description,
                 'paid' => $paidAmount], 200);
         }
 
