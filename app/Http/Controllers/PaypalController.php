@@ -146,7 +146,7 @@ class PaypalController extends Controller {
 
             // Store the payment details
             // $this->storePayment();
-            $paymentInfo = array("meet_entry_id" => $entryId,
+            $paymentInfo = array("meet_entries_id" => $entryId,
                 "invoice_id" => $invoiceId);
 
             Log::debug('Attempting to create PayPalPayment object for entry: ' . $entryId .
@@ -445,6 +445,22 @@ class PaypalController extends Controller {
         $paypalPayment->saveOrFail();
 
         return $paypalPayment;
+    }
+
+    public function transferPaypalPayment() {
+        $paymentData = $this->request->all();
+        $paypalPayment = PayPalPayment::find($paymentData['id']);
+
+        if (!isset($paypalPayment)) {
+            Log::error('Unable to find PayPal payment with id ' . $paymentData['id']);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to find PayPal payment with id' . $paymentData['id']], 404);
+        }
+
+        $paypalPayment->meet_entry_id = intval($paymentData['meet_entry_id']);
+        $paypalPayment->meet_entries_incomplete_id = intval($paymentData['meet_entries_incomplete_id']);
     }
 
 }

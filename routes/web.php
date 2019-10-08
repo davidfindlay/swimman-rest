@@ -59,6 +59,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('create_payment_incomplete/{id}', ['uses' => 'PaypalController@createPaymentIncompleteEntryById']);
     $router->post('create_payment_entry', ['uses' => 'PaypalController@createPaymentEntry']);
     $router->post('finalise_payment', ['uses' => 'PaypalController@finalisePayment']);
+    $router->post('transfer_payment', ['middleware' => 'auth:api', 'uses' => 'MeetEntPaypalControllerryController@transferPaypalPayment']);
 
     $router->post('users/register', ['uses' => 'UserController@register']);
     $router->post('users/link_member/{memberNumber}', ['middleware' => 'auth:api', 'uses' => 'UserController@linkMember']);

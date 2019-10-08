@@ -906,4 +906,27 @@ class MeetEntryController extends Controller {
         return response()->json(['success' => true,
             'entry' => $entry], 200);
     }
+
+    public function applyPayment() {
+        $paymentDetails = $this->request->all();
+
+        $entry = MeetEntry::find($paymentDetails->entry_id);
+
+        if (!isset($entry)) {
+            Log:error('Attempt to apply payment to meet entry that doesn\'t exist: ' . $paymentDetails->entry_id);
+            return response()->json(['success' => false,
+                'message' => 'Unable to find this meet entry.'], 404);
+        }
+
+        $meetEntryPayment = MeetEntryPayment::create();
+        $meetEntryPayment->entry_id = $paymentDetails->entry_id;
+        $meetEntryPayment->member_id = $entry->member_id;
+        $meetEntryPayment->amount = $paymentDetails->amount;
+        $meetEntryPayment->method = 2;
+        $meetEntryPayment->comment = $paymentDetails->comment;
+        $meetEntryPayment->saveOrFail();
+
+        return response()->json(['success' => true,
+            'meet_entry_payment' => $meetEntryPayment], 200);
+    }
 }
