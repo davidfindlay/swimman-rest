@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use App\DisabilityClassification;
+use App\Mail\MeetEntryConfirmation;
 use App\MeetEntry;
 use App\MeetEntryEvent;
 use App\MeetEntryPayment;
@@ -21,6 +22,7 @@ use App\Club;
 use App\AgeGroup;
 
 use App\PayPalPayment;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use mysql_xdevapi\Exception;
@@ -615,6 +617,19 @@ class MeetEntryController extends Controller {
         foreach($meetEntryCreated->events as $e) {
             $e->event;
         }
+
+        if (! $editMode) {
+            switch ($entryData->paymentOptions->paymentOption) {
+                case 'club':
+                    Mail::to('davidjwfindlay@gmail.com')->send(new MeetEntryConfirmation($meetEntryCreated));
+                    break;
+                case 'later':
+                    Mail::to('davidjwfindlay@gmail.com')->send(new MeetEntryConfirmation($meetEntryCreated));
+                    break;
+            }
+        }
+
+//        Mail::to('davidjwfindlay@gmail.com')->send(new MeetEntryConfirmation($meetEntryCreated));
 
         return response()->json(['meet_entry' => $meetEntryCreated,
             'status_id' => $status,

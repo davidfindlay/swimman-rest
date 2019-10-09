@@ -63,4 +63,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('users/register', ['uses' => 'UserController@register']);
     $router->post('users/link_member/{memberNumber}', ['middleware' => 'auth:api', 'uses' => 'UserController@linkMember']);
 
+    $router->post('meet_entry/{code}/send_confirmation', ['uses' => 'EmailConfirmationController@sendMeetEntryConfirmation']);
+
+
+
 });
