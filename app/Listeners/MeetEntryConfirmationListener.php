@@ -3,10 +3,8 @@
 namespace App\Listeners;
 
 use Log;
-use App\Events\ExampleEvent;
 use App\Events\MeetEntryConfirmationEvent;
 use App\Mail\MeetEntryConfirmation;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Mail;
 

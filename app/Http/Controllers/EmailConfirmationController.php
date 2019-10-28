@@ -33,12 +33,11 @@ class EmailConfirmationController extends Controller
     public function sendMeetEntryConfirmation($meetEntryCode) {
 
         // For now let people send their own reminders.
-
-        if ($this->user->is_admin != 1) {
-            Log:error('Attempt to send meet entry confirmation for ' . $meetEntryCode . ' by non-admin', $this->user);
-            return response()->json(['success' => false,
-                'message' => 'You do not have permission to send Meet Entry confirmations.'], 403);
-        }
+//        if (!isset($this->user) || $this->user->is_admin != 1) {
+//            Log::error('Attempt to send meet entry confirmation for ' . $meetEntryCode . ' by non-admin', $this->user);
+//            return response()->json(['success' => false,
+//                'message' => 'You do not have permission to send Meet Entry confirmations.'], 403);
+//        }
 
         $entry = MeetEntry::where('code', '=', $meetEntryCode)->first();
 
@@ -50,7 +49,7 @@ class EmailConfirmationController extends Controller
         Log::info('Meet entry confirmation for meet entry ' . $meetEntryCode . ' sent.');
 
 
-        Event::dispatch(new MeetEntryConfirmationEvent($entry));
+        event(new MeetEntryConfirmationEvent($entry));
 
     }
 }

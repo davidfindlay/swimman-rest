@@ -62,6 +62,7 @@ class MeetEntryConfirmation extends Mailable {
 
     //build the message.
     public function build() {
+        Log::debug('build meet-entry-confirmation');
         return $this->view('meet-entry-confirmation');
     }
 
