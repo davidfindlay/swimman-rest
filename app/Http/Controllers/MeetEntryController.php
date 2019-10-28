@@ -238,6 +238,21 @@ class MeetEntryController extends Controller {
                     'status_description' => $pendingStatus->description], 200);
             }
 
+            // Club id is set to other
+            if ($membershipDetails->club_selector != 'other') {
+                $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+                $entry->status_id = $pendingStatus->id;
+                $pendingReason = 'Club ID is set to other';
+                $entry->pending_reason = $pendingReason;
+                $entry->saveOrFail();
+                $entry->entrydata = json_decode($entry->entrydata, true);
+                return response()->json(['pending_entry' => $entry,
+                    'status_id' => $pendingStatus->id,
+                    'explanation' => $pendingReason,
+                    'status_label' => $pendingStatus->label,
+                    'status_description' => $pendingStatus->description], 200);
+            }
+
             // If member number isn't set leave the entry as pending
             if ($membershipDetails->member_number == '') {
                 $memberSearch = Member::where('surname', '=', $entrantDetails->entrantSurname)
@@ -454,7 +469,7 @@ class MeetEntryController extends Controller {
 
         // Get club
         if ($membershipDetails->club_selector != "") {
-            $meetEntry->club_id = $membershipDetails->club_selector;
+            $meetEntry->club_id = intval($membershipDetails->club_selector);
         } else {
             $club = Club::where('code', '=', $membershipDetails->club_code)->first();
             $meetEntry->club_id = $club->id;
