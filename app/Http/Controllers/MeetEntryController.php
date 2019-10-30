@@ -239,7 +239,7 @@ class MeetEntryController extends Controller {
             }
 
             // Club id is set to other
-            if ($membershipDetails->club_selector != 'other') {
+            if ($membershipDetails->club_selector == 'other') {
                 $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
                 $entry->status_id = $pendingStatus->id;
                 $pendingReason = 'Club ID is set to other';
