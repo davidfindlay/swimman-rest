@@ -468,7 +468,7 @@ class MeetEntryController extends Controller {
         $meetEntry->medical_details = $entryData->medicalDetails->medicalDetails;
 
         // Get club
-        if ($membershipDetails->club_selector != "") {
+        if ($membershipDetails->club_selector != "" && $membershipDetails->club_selector != 'other') {
             $meetEntry->club_id = intval($membershipDetails->club_selector);
         } else {
             $club = Club::where('code', '=', $membershipDetails->club_code)->first();
