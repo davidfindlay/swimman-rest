@@ -22,6 +22,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('refresh', ['uses' => 'AuthController@refresh']);
 
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
+    $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
 	$router->get('meets/{id}/events', ['uses' => 'MeetController@getEvents']);
 

@@ -109,6 +109,12 @@ class MeetController extends Controller {
 		return response()->json($meetDetails);
 	}
 
+	public function getAllMeets()
+    {
+        $meets = Meet::all();
+        return response()->json($meets);
+    }
+
 	public function getEvents($id)
 	{
 		return response()->json(Meet::find($id)->events);
