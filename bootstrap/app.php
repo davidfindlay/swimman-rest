@@ -79,7 +79,9 @@ $app->register(App\Providers\EventServiceProvider::class);
 $app->register(Tymon\JWTAuth\Providers\LumenServiceProvider::class);
 $app->register('Sentry\Laravel\ServiceProvider');
 $app->register(Illuminate\Mail\MailServiceProvider::class);
-$app->register(Queueworker\SansDaemon\SansDaemonServiceProvider::class);
+//$app->register(Queueworker\SansDaemon\SansDaemonServiceProvider::class);
+$app->configure('queue');
+$app->register(Illuminate\Queue\QueueServiceProvider::class);
 
 $app->configure('mail');
 $app->alias('mailer', Illuminate\Mail\Mailer::class);

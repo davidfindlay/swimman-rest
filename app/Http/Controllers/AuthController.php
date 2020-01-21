@@ -163,6 +163,8 @@ class AuthController extends Controller
             $newUser->emergency_phone = $newEmergency->phone->phonenumber;
             $newUser->emergency_email = $newEmergency->email;
 
+            Log::info( "User login by $username via Joomla user" );
+
 		}
 
 		$newUser->username = $username;

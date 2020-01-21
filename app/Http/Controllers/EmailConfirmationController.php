@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Events\MeetEntryConfirmationEvent;
+use App\Jobs\MeetEntryConfirmationEmailJob;
 use App\MeetEntryStatus;
 use Log;
 use App\MeetEntry;
@@ -48,8 +49,11 @@ class EmailConfirmationController extends Controller
 
         Log::info('Meet entry confirmation for meet entry ' . $meetEntryCode . ' sent.');
 
+        dispatch(new MeetEntryConfirmationEmailJob($entry));
 
-        event(new MeetEntryConfirmationEvent($entry));
+        return response()->json(['success' => true,
+            'message' => 'Confirmation sent for entry ' . $meetEntryCode,
+            'meet_entry' => $entry]);
 
     }
 }

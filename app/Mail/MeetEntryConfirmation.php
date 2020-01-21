@@ -1,6 +1,7 @@
 <?php
 namespace App\Mail;
 
+use Log;
 use App\MeetEntry;
 use App\MeetEntryStatus;
 use Illuminate\Bus\Queueable;
