@@ -30,7 +30,9 @@ class Meet extends Model
 		'massagefee',
 		'programfee',
         'meetfee_nonmember',
-        'minevents'
+        'minevents',
+        'included_events',
+        'extra_event_fee'
 	];
 
 	/**

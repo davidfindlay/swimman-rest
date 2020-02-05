@@ -526,20 +526,8 @@ class MeetEntryController extends Controller {
                     $meetEntryStatus->saveOrFail();
 
                     break;
-                case 'paypal':
-                    // set to Awaiting Payment
-                    $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Awaiting Payment')->first();
-                    $entry->status_id = $pendingStatus->id;
-                    $entry->saveOrFail();
-                    $status = $pendingStatus->id;
-
-                    $meetEntryStatus = new MeetEntryStatus();
-                    $meetEntryStatus->entry_id = $meetEntryId;
-                    $meetEntryStatus->code = $pendingStatus->id;
-                    $meetEntryStatus->saveOrFail();
-
-                    break;
                 case 'later':
+                case 'paypal':
                     // set to Awaiting Payment
                     $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Awaiting Payment')->first();
                     $entry->status_id = $pendingStatus->id;
@@ -642,10 +630,21 @@ class MeetEntryController extends Controller {
 
         $entryCost += $meetDetails->meetfee;
 
+        // Fees for individual events
         foreach ($entryData->entryEvents as $eventEntry) {
             foreach ($meetDetails->events as $e) {
                 if ($e->id == $eventEntry->event_id) {
-                    $entryCost += $e->eventfee;
+
+                    if ($e->eventfee !== NULL) {
+                        $entryCost += $e->eventfee;
+                    } else {
+                        // Is there a number of included events set
+                        if ($e->legs === 1) {
+                            if ($meetDetails->included_events !== NULL && $meetDetails->extra_event_fee !== NULL) {
+                                $entryCost += $meetDetails->extra_event_fee;
+                            }
+                        }
+                    }
                 }
             }
         }
