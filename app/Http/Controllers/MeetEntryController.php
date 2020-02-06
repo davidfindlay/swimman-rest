@@ -627,7 +627,7 @@ class MeetEntryController extends Controller {
 
     private function calculateEntryFee($meetEntry, $entryData, $meetDetails) {
         $entryCost = 0;
-
+        $numIndividualEvents = 0;
         $entryCost += $meetDetails->meetfee;
 
         // Fees for individual events
@@ -640,8 +640,11 @@ class MeetEntryController extends Controller {
                     } else {
                         // Is there a number of included events set
                         if ($e->legs === 1) {
-                            if ($meetDetails->included_events !== NULL && $meetDetails->extra_event_fee !== NULL) {
-                                $entryCost += $meetDetails->extra_event_fee;
+                            $numIndividualEvents++;
+                            if ($numIndividualEvents > $meetDetails->included_events) {
+                                if ($meetDetails->included_events !== NULL && $meetDetails->extra_event_fee !== NULL) {
+                                    $entryCost += $meetDetails->extra_event_fee;
+                                }
                             }
                         }
                     }
