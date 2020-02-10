@@ -8,9 +8,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Email;
 use App\Member;
 
+use App\MemberEmails;
 use App\Phone;
+use App\Club;
+use App\Membership;
+use App\MembershipType;
+use App\MembershipStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -105,6 +111,108 @@ class MemberController extends Controller {
             ], 404);
         }
 
+    }
+
+    public function createMember() {
+        if ($this->request->user()->is_admin) {
+            return response()->json([
+                'error' => 'Forbidden to access create members.'
+            ], 403);
+        }
+
+        $member = new Member();
+        $member->surname = $this->request->surname;
+        $member->firstname = $this->request->firstname;
+        $member->othernames = "";
+        $member->dob = $this->request->dob;
+
+        if ($this->request->number !== NULL && strlen($this->request->number) > 0) {
+            // TODO: verify number doesn't exist yet
+            $member->number = $this->request->number;
+        }
+
+        if ($this->request->gender !== NULL && strlen($this->request->gender) > 0) {
+            if (strtoupper($this->request->gender[0]) === 'M') {
+                $member->gender = 1;
+            } else if (strtoupper($this->request->gender[0]) === 'F') {
+                $member->gender = 2;
+            } else {
+                return response()->json([
+                    'error' => 'Gender must be M or F!'
+                ], 400);
+            }
+        } else {
+            return response()->json([
+                'error' => 'Gender(M or F) is required!'
+            ], 400);
+        }
+
+        $member->saveOrFail();
+
+        if ($member->number === NULL) {
+            $member->number = "X" . $member->id;
+            $member->saveOrFail();
+        }
+
+        $member->emails()->attach($this->addEmail($this->request->email));
+        $member->phones()->attach($this->addPhone($this->request->phone));
+        $this->createMembership($member->id,
+            $this->request->club,
+            $this->request->membershipType,
+            $this->request->membershipStatus,
+            $this->request->startdate,
+            $this->request->enddate);
+
+        $member->emails;
+        $member->phones;
+        $member->memberships;
+
+        return response()->json([
+           'success' => true,
+           'member' => $member
+        ], 200);
+
+    }
+
+    public function addEmail($email) {
+
+	    $emailObj = new Email();
+
+        $emailObj->email_type = 1;
+        $emailObj->address = $email;
+        $emailObj->saveOrFail();
+
+        return $emailObj;
+
+    }
+
+    public function addPhone($phone) {
+        // TODO: search for existing
+
+        $phoneObj = new Phone();
+        $phoneObj->phonetype = 1;
+        $phoneObj->phonenumber = $phone;
+        $phoneObj->saveOrFail();
+
+        return $phoneObj;
+    }
+
+    public function createMembership($memberId, $clubCode, $type, $status, $start, $end) {
+
+	    $club = Club::where('code', '=', $clubCode)->first();
+
+	    $membership = new Membership();
+	    $membership->member_id = $memberId;
+	    $membership->club_id = $club->id;
+	    $membership->type = MembershipType::where('typename', '=', $type)->first()->id;
+	    $membership->status = MembershipStatus::where('desc', '=', $status)->first()->id;
+	    $membership->startdate = $start;
+	    $membership->enddate = $end;
+        $membership->activated = 1;
+
+	    $membership->saveOrFail();
+
+	    return $membership;
     }
 
 }
