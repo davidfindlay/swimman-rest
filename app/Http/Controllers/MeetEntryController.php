@@ -848,8 +848,10 @@ class MeetEntryController extends Controller {
 
         foreach ($entries as $entry) {
             $entry->member;
-            $entry->member->emergency;
-            $entry->member->emergency->phone;
+            $emergency = $entry->member->emergency;
+            if ($emergency !== NULL) {
+                $entry->member->emergency->phone;
+            }
             $entry->member->phones;
             $entry->member->emails;
             $entry->member->memberships;

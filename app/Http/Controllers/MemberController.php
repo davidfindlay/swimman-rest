@@ -88,10 +88,11 @@ class MemberController extends Controller {
             $phones = $member->phones;
             $emails = $member->emails;
             $emergency = $member->emergency;
-            $emergencyContact = Phone::find($emergency->phone_id);
-
-            if ($emergencyContact != NULL) {
-                $emergency['phonenumber'] = $emergencyContact->phonenumber;
+            if ($emergency !== NULL) {
+                $emergencyContact = Phone::find($emergency->phone_id);
+                if ($emergencyContact != NULL) {
+                    $emergency['phonenumber'] = $emergencyContact->phonenumber;
+                }
             }
 
             foreach($memberships as $m) {
@@ -114,17 +115,32 @@ class MemberController extends Controller {
     }
 
     public function createMember() {
-        if ($this->request->user()->is_admin) {
+        $user = $this->request->user();
+
+        if (!$user->is_admin) {
             return response()->json([
-                'error' => 'Forbidden to access create members.'
+                'error' => 'Forbidden to access create members.',
+                'user' => $user
             ], 403);
         }
 
         $member = new Member();
-        $member->surname = $this->request->surname;
-        $member->firstname = $this->request->firstname;
+        $member->surname = $this->titleCase($this->request->surname);
+        $member->firstname = $this->titleCase($this->request->firstname);
         $member->othernames = "";
-        $member->dob = $this->request->dob;
+
+        // Handle date format with slashes
+        if (strpos($this->request->dob, '/' ) !== false) {
+            $dateComponents = explode('/', $this->request->dob);
+            if (count($dateComponents) < 3) {
+                return response()->json([
+                    'error' => 'Date format invalid!'
+                ], 400);
+            }
+            $member->dob = $dateComponents[2] . '-' . $dateComponents[1] . '-' . $dateComponents[0];
+        } else {
+            $member->dob = $this->request->dob;
+        }
 
         if ($this->request->number !== NULL && strlen($this->request->number) > 0) {
             // TODO: verify number doesn't exist yet
@@ -213,6 +229,36 @@ class MemberController extends Controller {
 	    $membership->saveOrFail();
 
 	    return $membership;
+    }
+
+    function titleCase($string)
+    {
+        $word_splitters = array(' ', '-', "O'", "L'", "D'", 'St.', 'Mc');
+        $lowercase_exceptions = array('the', 'van', 'den', 'von', 'und', 'der', 'de', 'da', 'of', 'and', "l'", "d'");
+        $uppercase_exceptions = array('III', 'IV', 'VI', 'VII', 'VIII', 'IX');
+
+        $string = strtolower($string);
+        foreach ($word_splitters as $delimiter)
+        {
+            $words = explode($delimiter, $string);
+            $newwords = array();
+            foreach ($words as $word)
+            {
+                if (in_array(strtoupper($word), $uppercase_exceptions))
+                    $word = strtoupper($word);
+                else
+                    if (!in_array($word, $lowercase_exceptions))
+                        $word = ucfirst($word);
+
+                $newwords[] = $word;
+            }
+
+            if (in_array(strtolower($delimiter), $lowercase_exceptions))
+                $delimiter = strtolower($delimiter);
+
+            $string = join($delimiter, $newwords);
+        }
+        return $string;
     }
 
 }
