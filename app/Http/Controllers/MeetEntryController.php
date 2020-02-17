@@ -413,7 +413,7 @@ class MeetEntryController extends Controller {
             $meetEntry->age_group_id = $ageGroup->id;
         }
 
-        $meetEntry->meals = 0;
+//        $meetEntry->meals = 0;
         $meetEntry->cancelled = 0;
 
         // Determine entry cost
@@ -466,6 +466,11 @@ class MeetEntryController extends Controller {
         }
 
         $meetEntry->medical_details = $entryData->medicalDetails->medicalDetails;
+
+        if (isset($entryData->mealMerchandiseDetails)) {
+            $meetEntry->meals = $entryData->mealMerchandiseDetails->meals;
+            $meetEntry->meals_comments = $entryData->mealMerchandiseDetails->mealComments;
+        }
 
         // Get club
         if ($membershipDetails->club_selector != "" && $membershipDetails->club_selector != 'other') {
@@ -635,7 +640,7 @@ class MeetEntryController extends Controller {
             foreach ($meetDetails->events as $e) {
                 if ($e->id == $eventEntry->event_id) {
 
-                    if ($e->eventfee !== NULL) {
+                    if ($e->eventfee !== NULL && $e->eventfee !== 0) {
                         $entryCost += $e->eventfee;
                     } else {
                         // Is there a number of included events set
@@ -650,6 +655,10 @@ class MeetEntryController extends Controller {
                     }
                 }
             }
+        }
+
+        if (isset($entryData->mealMerchandiseDetails)) {
+            $entryCost += $entryData->mealMerchandiseDetails->meals * $meetDetails->mealfee;
         }
 
         return $entryCost;

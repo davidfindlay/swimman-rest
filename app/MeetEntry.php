@@ -20,6 +20,7 @@ class MeetEntry extends Model
 		'member_id',
         'age_group_id',
         'meals',
+        'meals_comments',
 		'medical',
         'cost',
         'notes',

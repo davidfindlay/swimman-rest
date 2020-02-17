@@ -108,6 +108,18 @@ class PaypalController extends Controller {
 //
 //        }
 
+//        if ($meetEntry->meals !== NULL && intval($meetEntry->meals) !== 0) {
+//            $mealItem = new Item();
+//            $mealItem->setName('Meal Fees');
+//            $mealItem->setQuantity(intval($meetEntry->meals));
+//            $mealPrice = floatval($meet->mealfee) * intval($meetEntry->meals);
+//            $mealItem->setPrice($mealPrice);
+//            $mealItem->setCurrency("AUD");
+//
+//            $arrItems[] = $mealItem;
+//
+//        }
+
         $itemList->setItems($arrItems);
 
         $amount = new Amount();
@@ -161,11 +173,15 @@ class PaypalController extends Controller {
 //            $this->logger->error("Payment Creation Exception: " . $ex);
             $approvalUrl = 'error';
 
-            Log::error('Exception while trying to create payment', $ex);
+            // Log::error('Exception while trying to create payment', $ex);
+
+            \Sentry\captureException($ex);
+            \Sentry\captureMessage($ex->getData());
 
             return response()->json([
                 'success' => false,
-                'exception' => $ex->getMessage()], 500);
+                'exception' => $ex->getMessage(),
+                'details' => $ex->getData()], 500);
 
         }
 
