@@ -24,6 +24,7 @@ use App\PayPalPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use mysql_xdevapi\Exception;
+use Psr\Log\NullLogger;
 
 class MeetEntryController extends Controller {
 
@@ -477,7 +478,19 @@ class MeetEntryController extends Controller {
             $meetEntry->club_id = intval($membershipDetails->club_selector);
         } else {
             $club = Club::where('code', '=', $membershipDetails->club_code)->first();
-            $meetEntry->club_id = $club->id;
+
+            if ($club === NULL) {
+                $club = Club::where('code', '=', 'UNAT')->first();
+
+                if ($club === NULL) {
+                    $meetEntry->club_id = NULL;
+                } else {
+                    $meetEntry->club_id = $club->id;
+                }
+            } else {
+                $meetEntry->club_id = $club->id;
+            }
+
         }
 
         $meetEntry->code = $entry->code;
