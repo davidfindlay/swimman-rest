@@ -653,9 +653,7 @@ class MeetEntryController extends Controller {
             foreach ($meetDetails->events as $e) {
                 if ($e->id == $eventEntry->event_id) {
 
-                    if ($e->eventfee !== NULL && $e->eventfee !== 0) {
-                        $entryCost += $e->eventfee;
-                    } else {
+                    if ($e->eventgfee === NULL || $e->eventfee === 0) {
                         // Is there a number of included events set
                         if ($e->legs === 1) {
                             $numIndividualEvents++;
@@ -664,6 +662,10 @@ class MeetEntryController extends Controller {
                                     $entryCost += $meetDetails->extra_event_fee;
                                 }
                             }
+                        }
+                    } else {
+                        if ($e->legs === 1) {
+                            $entryCost += $e->eventfee;
                         }
                     }
                 }
