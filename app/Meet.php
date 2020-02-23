@@ -72,4 +72,8 @@ class Meet extends Model
 	    return $this->hasMany('App\MeetPaymentMethod');
     }
 
+    public function merchandise() {
+	    return $this->hasMany('App\MeetMerchandise');
+    }
+
 }

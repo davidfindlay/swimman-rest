@@ -224,6 +224,14 @@ class MeetEntryController extends Controller {
             $entrantDetails = $entryData->entrantDetails;
             $membershipDetails = $entryData->membershipDetails;
 
+            // If the Entrant DOB is the wrong format, fix it
+            if (strpos($entrantDetails->dob, '/') !== false) {
+                $dateObj = DateTime::createFromFormat('d/m/Y', $entrantDetails->dob);
+                $entrantDetails->dob = $dateObj->format('Y-m-d');
+                \Sentry\captureMessage('entrantDetails->dob was in Australian date format DD/MM/YYYY');
+
+            }
+
             // User isn't an MSA member so don't try to create an entry for them
             if ($membershipDetails->member_type != 'msa') {
                 $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
