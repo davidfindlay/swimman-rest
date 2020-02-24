@@ -9,6 +9,7 @@ use App\MeetEvent;
 use App\MeetMerchandise;
 use App\MeetMerchandiseImage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 
 class MeetMerchandiseController extends Controller
 {
@@ -146,25 +147,38 @@ class MeetMerchandiseController extends Controller
     }
 
     public function addMerchandiseImage($merchandiseId) {
-        if (!$this->isAuthorised($this->request->meet_id)) {
+        $imageData = json_decode($this->request->input('imageData'));
+        $merchandise = MeetMerchandise::find($merchandiseId);
+
+        if ($merchandise === NULL) {
             return response()->json([
-                'error' => 'You must be a meet organiser for this meet or an admin to create merchandise',
+                'error' => 'Unable to find merchandise item: ' . $merchandiseId,
+                'imageData' => $imageData,
+                'user' => $this->request->user
+            ], 403);
+        }
+
+        $meet_id = $merchandise->meet_id;
+
+        if (!$this->isAuthorised($meet_id)) {
+            return response()->json([
+                'error' => 'You must be a meet organiser for this meet or an admin to add an image to merchandise',
+                'imageData' => $imageData,
                 'user' => $this->request->user
             ], 403);
         }
 
         $picName = $this->request->file('image')->getClientOriginalName();
-        $path = $_SERVER['DOCUMENT_ROOT'] . 'meets/' . $this->request->meet_id . '/merchandise/';
-        $destinationPath = public_path($path);
-        File::makeDirectory($destinationPath, 0777, true, true);
-        $this->request->file('image')->move($destinationPath, $picName);
+        $path = $_SERVER['DOCUMENT_ROOT'] . '/meets/' . $meet_id . '/merchandise/';
+        File::makeDirectory($path, 0777, true, true);
+        $this->request->file('image')->move($path, $picName);
 
         $merchandise = MeetMerchandise::find($merchandiseId);
         $merchandiseImage = new MeetMerchandiseImage();
         $merchandiseImage->meet_merchandise_id = $merchandiseId;
         $merchandiseImage->meet_id = $merchandise->meet_id;
         $merchandiseImage->filename = $picName;
-        $merchandiseImage->caption = $this->request->caption;
+        $merchandiseImage->caption = $imageData->caption;
         $merchandiseImage->saveOrFail();
 
         return response()->json([
@@ -175,7 +189,9 @@ class MeetMerchandiseController extends Controller
     }
 
     public function deleteMerchandiseItem($merchandiseId) {
-        if (!$this->isAuthorised($this->request->meet_id)) {
+        $merchandise = MeetMerchandise::find($merchandiseId);
+        $meet_id = $merchandise->meet_id;
+        if (!$this->isAuthorised($meet_id)) {
             return response()->json([
                 'error' => 'You must be a meet organiser for this meet or an admin to delete merchandise',
                 'user' => $this->request->user
@@ -183,7 +199,7 @@ class MeetMerchandiseController extends Controller
         }
 
         // TODO: Add code to prevent deletion if the item has orders
-        $merchandise = MeetMerchandise::find($merchandiseId);
+
         $merchandise->delete();
 
         return response()->json([

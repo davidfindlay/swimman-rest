@@ -38,7 +38,7 @@ class MeetMerchandise extends Model
 	protected $hidden = [];
 
 	// Existing table, no timestamps
-	public $timestamps = false;
+	public $timestamps = true;
 
 	public function images()
 	{

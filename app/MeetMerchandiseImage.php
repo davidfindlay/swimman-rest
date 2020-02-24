@@ -29,7 +29,7 @@ class MeetMerchandiseImage extends Model
 	protected $hidden = [];
 
 	// Existing table, no timestamps
-	public $timestamps = false;
+	public $timestamps = true;
 
 	public function meet() {
 		return $this->hasOne('App\Meet', 'id', 'meet_id');
