@@ -68,6 +68,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->post('merchandise/create', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@createMerchandiseItem']);
     $router->post('merchandise/{merchandiseId}/addImage', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@addMerchandiseImage']);
+    $router->delete('merchandise/images/{merchandiseImageId}', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@deleteMerchandiseImage']);
 
     $router->get('merchandise/{merchandiseId}', ['uses' => 'MeetMerchandiseController@getMerchandiseItem']);
     $router->put('merchandise/{merchandiseId}', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@updateMerchandiseItem']);

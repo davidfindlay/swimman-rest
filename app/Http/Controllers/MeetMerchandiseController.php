@@ -129,6 +129,7 @@ class MeetMerchandiseController extends Controller
         $merchandise->max_qty = $this->request->max_qty;
         $merchandise->status = $this->request->status;
         $merchandise->saveOrFail();
+        $merchandise->refresh();
 
         return response()->json([
             'success' => true,
@@ -169,7 +170,7 @@ class MeetMerchandiseController extends Controller
         }
 
         $picName = $this->request->file('image')->getClientOriginalName();
-        $path = $_SERVER['DOCUMENT_ROOT'] . '/meets/' . $meet_id . '/merchandise/';
+        $path = $_SERVER['DOCUMENT_ROOT'] . '/static/meets/' . $meet_id . '/merchandise/';
         File::makeDirectory($path, 0777, true, true);
         $this->request->file('image')->move($path, $picName);
 
@@ -180,6 +181,7 @@ class MeetMerchandiseController extends Controller
         $merchandiseImage->filename = $picName;
         $merchandiseImage->caption = $imageData->caption;
         $merchandiseImage->saveOrFail();
+        $merchandiseImage->refresh();
 
         return response()->json([
             'success' => true,
@@ -201,6 +203,23 @@ class MeetMerchandiseController extends Controller
         // TODO: Add code to prevent deletion if the item has orders
 
         $merchandise->delete();
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
+
+    public function deleteMerchandiseImage($merchandiseImageId) {
+        $merchandiseImage = MeetMerchandiseImage::find($merchandiseImageId);
+        $meet_id = $merchandiseImage->meet_id;
+        if (!$this->isAuthorised($meet_id)) {
+            return response()->json([
+                'error' => 'You must be a meet organiser for this meet or an admin to delete merchandise images',
+                'user' => $this->request->user
+            ], 403);
+        }
+
+        $merchandiseImage->delete();
 
         return response()->json([
             'success' => true
