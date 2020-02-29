@@ -11,10 +11,13 @@ namespace App\Http\Controllers;
 use App\DisabilityClassification;
 use App\MeetEntry;
 use App\MeetEntryEvent;
+use App\MeetEntryOrder;
 use App\MeetEntryPayment;
 use App\MeetEntryStatus;
 use App\MeetEntryIncomplete;
 use App\MeetEntryStatusCode;
+use App\MeetEntryOrderItem;
+use App\MeetMerchandise;
 use App\Member;
 use App\Meet;
 use App\Club;
@@ -225,10 +228,10 @@ class MeetEntryController extends Controller {
             $membershipDetails = $entryData->membershipDetails;
 
             // If the Entrant DOB is the wrong format, fix it
-            if (strpos($entrantDetails->dob, '/') !== false) {
-                $dateObj = DateTime::createFromFormat('d/m/Y', $entrantDetails->dob);
-                $entrantDetails->dob = $dateObj->format('Y-m-d');
-                \Sentry\captureMessage('entrantDetails->dob was in Australian date format DD/MM/YYYY');
+            if (strpos($entrantDetails->entrantDob, '/') !== false) {
+                $dateObj = DateTime::createFromFormat('d/m/Y', $entrantDetails->entrantDob);
+                $entrantDetails->entrantDob = $dateObj->format('Y-m-d');
+                \Sentry\captureMessage('entrantDetails->entrantDob was in Australian date format DD/MM/YYYY');
 
             }
 
@@ -503,6 +506,7 @@ class MeetEntryController extends Controller {
 
         $meetEntry->code = $entry->code;
         $meetEntry->saveOrFail();
+        $meetEntry->refresh();
         $meetEntryId = $meetEntry->id;
 
         // Add events
@@ -515,6 +519,64 @@ class MeetEntryController extends Controller {
                 $e->saveOrFail();
             }
 
+        }
+
+        if (isset($entryData->mealMerchandiseDetails)) {
+
+            # Handle merchandise
+            if (isset($entryData->mealMerchandiseDetails->merchandiseItems)) {
+                if (count($entryData->mealMerchandiseDetails->merchandiseItems) > 0) {
+
+                    $merchandiseOrder = new MeetEntryOrder();
+                    $merchandiseOrder->meet_entries_id = $meetEntryId;
+                    $merchandiseOrder->meet_id = $entryData->meetId;
+                    $merchandiseOrder->member_id = $member->id;
+                    $merchandiseOrder->total_exgst = 0;
+                    $merchandiseOrder->total_gst = 0;
+                    $merchandiseOrder->saveOrFail();
+                    $merchandiseOrder->refresh();
+
+                    $total_exgst = 0;
+                    $total_gst = 0;
+
+                    foreach ($entryData->mealMerchandiseDetails->merchandiseItems as $i) {
+                        $merchandiseId = $i->merchandiseId;
+                        $qty = $i->qty;
+
+                        $merchandiseDetails = MeetMerchandise::find($merchandiseId);
+                        if ($merchandiseDetails !== NULL) {
+                            $merchandiseOrderItem = new MeetEntryOrderItem();
+                            $merchandiseOrderItem->meet_merchandise_id = $merchandiseId;
+                            $merchandiseOrderItem->meet_entry_orders_id = $merchandiseOrder->id;
+                            $merchandiseOrderItem->qty = $qty;
+                            $merchandiseOrderItem->price_each_exgst = $merchandiseDetails->exgst;
+                            $merchandiseOrderItem->price_total_exgst = $qty * $merchandiseDetails->exgst;
+
+                            $total_exgst += $qty * $merchandiseDetails->exgst;
+
+                            if ($merchandiseDetails->gst_applicable) {
+                                $merchandiseOrderItem->price_total_gst = $qty * ($merchandiseDetails->exgst + $merchandiseDetails->gst);
+                                $merchandiseOrderItem->gst_applied = true;
+                                $total_gst += $merchandiseOrderItem->price_total_gst;
+                            } else {
+                                $merchandiseOrderItem->price_total_gst = $qty * $merchandiseDetails->exgst;
+                                $merchandiseOrderItem->gst_applied = false;
+                                $total_exgst = $total_gst;
+                            }
+
+                            $merchandiseOrderItem->saveOrFail();
+                            $merchandiseOrderItem->refresh();
+
+                        }
+                    }
+
+                    $merchandiseOrder->total_exgst = $total_exgst;
+                    $merchandiseOrder->total_gst = $total_gst;
+                    $merchandiseOrder->saveOrFail();
+                    $merchandiseOrder->refresh();
+
+                }
+            }
         }
 
         foreach ($entryData->entryEvents as $eventEntry) {
@@ -682,6 +744,20 @@ class MeetEntryController extends Controller {
 
         if (isset($entryData->mealMerchandiseDetails)) {
             $entryCost += $entryData->mealMerchandiseDetails->meals * $meetDetails->mealfee;
+
+            if (isset($entryData->mealMerchandiseDetails->merchandiseItems)) {
+                foreach ($entryData->mealMerchandiseDetails->merchandiseItems as $m) {
+                    $merchandiseDetails = MeetMerchandise::find($m->merchandiseId);
+
+                    $itemCost = 0;
+
+                    if ($merchandiseDetails !== NULL) {
+                        $itemCost = $merchandiseDetails->total_price * $m->qty;
+                    }
+
+                    $entryCost += $itemCost;
+                }
+            }
         }
 
         return $entryCost;

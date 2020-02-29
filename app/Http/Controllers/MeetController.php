@@ -59,8 +59,13 @@ class MeetController extends Controller {
                 foreach ($meetPaymentMethods as $p) {
                     $p->paymentType;
                 }
-			}
 
+                $merchandise = $m->merchandise;
+                foreach ($merchandise as $m) {
+                    $m->images;
+                }
+
+			}
 
 			return response()->json($meets);
 

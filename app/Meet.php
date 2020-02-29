@@ -32,7 +32,9 @@ class Meet extends Model
         'meetfee_nonmember',
         'minevents',
         'included_events',
-        'extra_event_fee'
+        'extra_event_fee',
+        'gst_applicable',
+        'tax_notes'
 	];
 
 	/**
