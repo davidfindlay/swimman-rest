@@ -75,4 +75,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->delete('merchandise/{merchandiseId}', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@deleteMerchandiseItem']);
 
+    $router->get('meet_entry_orders/{meetId}', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@getOrders']);
+
 });

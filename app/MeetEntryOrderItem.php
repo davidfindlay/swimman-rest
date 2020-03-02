@@ -38,4 +38,8 @@ class MeetEntryOrderItem extends Model
 		return $this->hasOne('App\Meet', 'id', 'meet_id');
 	}
 
+	public function merchandise() {
+	    return $this->hasOne('App\MeetMerchandise', 'id', 'meet_merchandise_id');
+    }
+
 }

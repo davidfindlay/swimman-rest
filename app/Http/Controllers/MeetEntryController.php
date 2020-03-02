@@ -561,7 +561,7 @@ class MeetEntryController extends Controller {
                             } else {
                                 $merchandiseOrderItem->price_total_gst = $qty * $merchandiseDetails->exgst;
                                 $merchandiseOrderItem->gst_applied = false;
-                                $total_exgst = $total_gst;
+                                $total_gst += $merchandiseOrderItem->price_total_exgst;
                             }
 
                             $merchandiseOrderItem->saveOrFail();

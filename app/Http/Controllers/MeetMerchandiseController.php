@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 
 use App\Meet;
 use App\MeetAccess;
+use App\MeetEntryOrder;
+use App\MeetEntryOrderItem;
+use App\MeetEntryStatus;
 use App\MeetEvent;
 use App\MeetMerchandise;
 use App\MeetMerchandiseImage;
@@ -223,6 +226,42 @@ class MeetMerchandiseController extends Controller
 
         return response()->json([
             'success' => true
+        ]);
+    }
+
+    public function getOrders($meetId) {
+        if (!$this->isAuthorised($meetId)) {
+            return response()->json([
+                'error' => 'You must be a meet organiser for this meet or an admin to view merchandise orders',
+                'user' => $this->request->user
+            ], 403);
+        }
+
+        $orders = MeetEntryOrder::where('meet_id', '=', intval($meetId))->get();
+
+        foreach($orders as $o) {
+            $items = $o->items;
+
+            foreach ($items as $i) {
+                $item = $i->merchandise;
+            }
+
+            $o->member;
+            $status = MeetEntryStatus::where('entry_id', '=', $o->meet_entries_id)
+                ->orderBy('id', 'DESC')
+                ->first();
+            if ($status != NULL) {
+                $status->status;
+                $o['status'] = $status['code'];
+                $o['status_text'] = $status['status']['label'];
+                $o['status_description'] = $status['status']['description'];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'meet_id' => intval($meetId),
+            'orders' => $orders,
         ]);
     }
 }
