@@ -9,6 +9,7 @@
 namespace App\Http\Controllers;
 
 use App\DisabilityClassification;
+use App\MeetAccess;
 use App\MeetEntry;
 use App\MeetEntryEvent;
 use App\MeetEntryOrder;
@@ -791,9 +792,12 @@ class MeetEntryController extends Controller {
     }
 
     public function getSubmittedEntriesByMeet($meetId) {
-        if ($this->user->is_admin != 1) {
-            return response()->json(['success' => false,
-                    'message' => 'You do not have permission to view Meet Entries.'], 403);
+        if (!$this->isAuthorised($meetId)) {
+            return response()->json([
+                'error' => 'You must be a meet organiser for this meet or an admin to access all entries to this meet',
+                'meetId' => $meetId,
+                'user' => $this->request->user()
+            ], 403);
         }
 
         $entries = MeetEntry::where('meet_id', '=', $meetId)->get();
@@ -1032,5 +1036,32 @@ class MeetEntryController extends Controller {
         $entry->saveOrFail();
         return response()->json(['success' => true,
             'entry' => $entry], 200);
+    }
+
+    public function isAuthorised($meet_id) {
+        $user = $this->request->user();
+        $memberId = $user->member;
+        $isMeetOrganiser = false;
+
+        if ($user->member !== NULL) {
+
+            $meetAccess = MeetAccess::where([['member_id', '=', $memberId],
+                ['meet_id', '=', $meet_id]])->first();
+
+            if ($meetAccess !== NULL) {
+                $isMeetOrganiser = true;
+            }
+
+        }
+
+        if (!$isMeetOrganiser) {
+            if (!$user->is_admin) {
+                return false;
+            } else {
+                return true;
+            }
+        } else {
+            return true;
+        }
     }
 }

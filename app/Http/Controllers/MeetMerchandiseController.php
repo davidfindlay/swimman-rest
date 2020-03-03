@@ -256,6 +256,11 @@ class MeetMerchandiseController extends Controller
                 $o['status_text'] = $status['status']['label'];
                 $o['status_description'] = $status['status']['description'];
             }
+
+            $meet_entry = $o->meet_entry;
+            if ($meet_entry !== NULL) {
+                $club = $meet_entry->club;
+            }
         }
 
         return response()->json([
