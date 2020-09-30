@@ -50,7 +50,7 @@ class Meet extends Model
 
 	public function events()
 	{
-		return $this->hasMany('App\MeetEvent');
+		return $this->hasMany('App\MeetEvent')->orderBy('prognumber', 'asc');
 	}
 
 	public function sessions()
