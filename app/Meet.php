@@ -34,7 +34,8 @@ class Meet extends Model
         'included_events',
         'extra_event_fee',
         'gst_applicable',
-        'tax_notes'
+        'tax_notes',
+        'logged_in_only'
 	];
 
 	/**

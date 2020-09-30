@@ -14,6 +14,7 @@ use App\MeetEntryIncomplete;
 use App\MeetEntryPayment;
 use App\MeetEntryStatus;
 use App\MeetEntryStatusCode;
+use App\MeetMerchandise;
 use App\PayPalPayment;
 
 use Exception;
@@ -206,24 +207,62 @@ class PaypalController extends Controller {
             || $entryData->membershipDetails->member_type === 'international') {
             $meetCost = $meet->meetfee;
         } else {
-            $meetCost = $meet->meetfee_non_member;
+            if ($meet->meetfee_non_member !== NULL) {
+                $meetCost = $meet->meetfee_non_member;
+            } else {
+                $meetCost = $meet->meetfee;
+            }
         }
 
         $eventCost = 0;
+        $mealCost = 0;
+        $merchandiseCost = 0;
+        $numIndividualEvents = 0;
+
         foreach ($entryData->entryEvents as $eventEntry) {
             foreach ($meet->events as $e) {
                 if ($e->id == $eventEntry->event_id) {
-                    if ($entryData->membershipDetails->member_type === 'msa'
-                        || $entryData->membershipDetails->member_type === 'international') {
-                        $eventCost += $e->eventfee;
-                    } else {
-                        $eventCost += $e->eventfee_non_member;
+                    if ($e->legs === 1) {
+                        $numIndividualEvents++;
+                        if ($entryData->membershipDetails->member_type === 'msa'
+                            || $entryData->membershipDetails->member_type === 'international') {
+                            $eventCost += $e->eventfee;
+                        } else {
+                            $eventCost += $e->eventfee_non_member;
+                        }
+
+                        if ($numIndividualEvents > $meet->included_events) {
+                            if ($meet->included_events !== NULL && $meet->extra_event_fee !== NULL) {
+                                $eventCost += $meet->extra_event_fee;
+                            }
+                        }
                     }
+                }
+
+
+
+            }
+        }
+
+        if (isset($entryData->mealMerchandiseDetails)) {
+            $mealCost += $entryData->mealMerchandiseDetails->meals * $meet->mealfee;
+
+            if (isset($entryData->mealMerchandiseDetails->merchandiseItems)) {
+                foreach ($entryData->mealMerchandiseDetails->merchandiseItems as $m) {
+                    $merchandiseDetails = MeetMerchandise::find($m->merchandiseId);
+
+                    $itemCost = 0;
+
+                    if ($merchandiseDetails !== NULL) {
+                        $itemCost = $merchandiseDetails->total_price * $m->qty;
+                    }
+
+                    $merchandiseCost += $itemCost;
                 }
             }
         }
 
-        $entryCost = $meetCost + $eventCost;
+        $entryCost = $meetCost + $eventCost + $mealCost + $merchandiseCost;
 
         $payer = new Payer();
         $payer->setPaymentMethod("paypal");

@@ -29,7 +29,8 @@ class MeetEvent extends Model
         'exhibition',
         'freetime',
         'times_required',
-        'eventfee_non_member'
+        'eventfee_non_member',
+        'splits_required'
 	];
 
 	protected $with = [

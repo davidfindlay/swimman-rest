@@ -724,7 +724,7 @@ class MeetEntryController extends Controller {
             foreach ($meetDetails->events as $e) {
                 if ($e->id == $eventEntry->event_id) {
 
-                    if ($e->eventgfee === NULL || $e->eventfee === 0) {
+                    if ($e->eventfee === NULL || $e->eventfee === 0) {
                         // Is there a number of included events set
                         if ($e->legs === 1) {
                             $numIndividualEvents++;
@@ -851,9 +851,12 @@ class MeetEntryController extends Controller {
 
     public function getPendingEntriesByMeet($meetId)
     {
-        if ($this->user->is_admin != 1) {
-            return response()->json(['success' => false,
-                'message' => 'You do not have permission to view Meet Entries.'], 403);
+        if (!$this->isAuthorised($meetId)) {
+            return response()->json([
+                'error' => 'You must be a meet organiser for this meet or an admin to access pending entries to this meet',
+                'meetId' => $meetId,
+                'user' => $this->request->user()
+            ], 403);
         }
 
         $statusIncomplete = MeetEntryStatusCode::where('label', '=', 'Incomplete')->first()->id;
