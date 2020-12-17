@@ -7,6 +7,7 @@
     "require": {
         "php": ">=5.6.4",
         "laravel/lumen-framework": "5.8.*",
+        "illuminate/mail": "^5.8",
         "vlucas/phpdotenv": "3.3.*",
         "firebase/php-jwt": "^5.0",
         "tymon/jwt-auth": "^1.0",
