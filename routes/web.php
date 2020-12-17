@@ -20,6 +20,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 	$router->post('login', ['uses' => 'AuthController@login']);
     $router->post('logout', ['uses' => 'AuthController@logout']);
     $router->post('refresh', ['uses' => 'AuthController@refresh']);
+    $router->post('resetPassword/{emailAddress}', ['uses' => 'AuthController@resetPasswordRequest']);
 
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
@@ -61,6 +62,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('create_payment_entry', ['uses' => 'PaypalController@createPaymentEntry']);
     $router->post('finalise_payment', ['uses' => 'PaypalController@finalisePayment']);
 
+    $router->get('users', ['middleware' => 'auth:api', 'uses' => 'UserController@userList']);
+    $router->get('users/{userId}', ['middleware' => 'auth:api', 'uses' => 'UserController@getUser']);
     $router->post('users/register', ['uses' => 'UserController@register']);
     $router->post('users/link_member/{memberNumber}', ['middleware' => 'auth:api', 'uses' => 'UserController@linkMember']);
 

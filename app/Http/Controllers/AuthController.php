@@ -1,11 +1,14 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\JUser;
 use App\User;
 use App\Phone;
 use Tymon\JWTAuth\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,15 +16,16 @@ use Illuminate\Support\Facades\Hash;
 class AuthController extends Controller
 {
 
-	/**
-	 * Create a new controller instance.
-	 *
-	 * @param  \Illuminate\Http\Request  $request
-	 * @return void
-	 */
-	public function __construct() {
-		$this->middleware('auth:api', ['except' => 'login']);
-	}
+    /**
+     * Create a new controller instance.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('auth:api', ['except' => 'login']);
+    }
 
     /**
      * Get a JWT via given credentials.
@@ -33,9 +37,9 @@ class AuthController extends Controller
         $credentials = $request->only(['username', 'password']);
 
 
-        if (! $token = $this->guard()->attempt($credentials)) {
+        if (!$token = $this->guard()->attempt($credentials)) {
 
-            if (! $this->importJUser($credentials)) {
+            if (!$this->importJUser($credentials)) {
                 return response()->json(['error' => 'Unable to import user'], 401);
             } else {
                 $token = $this->guard()->attempt($credentials);
@@ -70,7 +74,7 @@ class AuthController extends Controller
     /**
      * Get the token array structure.
      *
-     * @param  string $token
+     * @param string $token
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -84,11 +88,13 @@ class AuthController extends Controller
         ]);
     }
 
-    public function guard() {
+    public function guard()
+    {
         return Auth::guard('api');
     }
 
-    private function importJUser($credentials) {
+    private function importJUser($credentials)
+    {
 
         $username = $credentials['username'];
         $password = $credentials['password'];
@@ -103,52 +109,52 @@ class AuthController extends Controller
             return false;
         }
 
-		$jUser = JUser::where('username', $username)->first();
+        $jUser = JUser::where('username', $username)->first();
 
-		if ( isset($jUser) ) {
+        if (isset($jUser)) {
 
-			list( $md5pass, $md5salt ) = explode( ':', $jUser['password'] );
-			$userhash = md5( $password . $md5salt );
+            list($md5pass, $md5salt) = explode(':', $jUser['password']);
+            $userhash = md5($password . $md5salt);
 
-			if ( $md5pass != $userhash ) {
+            if ($md5pass != $userhash) {
 
-				header( 'HTTP/1.1 401 Unauthorized', true, 401 );
-				Log::error( "Authentication failure for $username" );
-				return false;
+                header('HTTP/1.1 401 Unauthorized', true, 401);
+                Log::error("Authentication failure for $username");
+                return false;
 
-			} else {
-
-				Log::info( "User login by $username via Joomla user" );
-
-			}
-
-		} else {
-			header( 'HTTP/1.1 401 Unauthorized', true, 401 );
-			Log::error( "User profile not found for $username" );
-			return false;
-		}
-
-		// If they're authenticated with Joomla, get the Joomla email address
-		$email = $jUser['email'];
-        $newPassword = Hash::make($password);
-
-		$newUser = new User;
-
-		$memberLink = $jUser->jUserLinks->last();
-
-		if (isset($memberLink)) {
-			$member = $memberLink->member;
-			$newUser->member = $member['id'];
-			$newUser->firstname = $member['firstname'];
-			$newUser->surname = $member['surname'];
-
-			if ($member['gender'] == 1) {
-			    $newUser->gender = 'M';
             } else {
-			    $newUser->gender = 'F';
+
+                Log::info("User login by $username via Joomla user");
+
             }
 
-			$newUser->dob = $member['dob'];
+        } else {
+            header('HTTP/1.1 401 Unauthorized', true, 401);
+            Log::error("User profile not found for $username");
+            return false;
+        }
+
+        // If they're authenticated with Joomla, get the Joomla email address
+        $email = $jUser['email'];
+        $newPassword = Hash::make($password);
+
+        $newUser = new User;
+
+        $memberLink = $jUser->jUserLinks->last();
+
+        if (isset($memberLink)) {
+            $member = $memberLink->member;
+            $newUser->member = $member['id'];
+            $newUser->firstname = $member['firstname'];
+            $newUser->surname = $member['surname'];
+
+            if ($member['gender'] == 1) {
+                $newUser->gender = 'M';
+            } else {
+                $newUser->gender = 'F';
+            }
+
+            $newUser->dob = $member['dob'];
 
             // Get most recent phone number
             $newPhones = $member['phones'];
@@ -163,14 +169,30 @@ class AuthController extends Controller
             $newUser->emergency_phone = $newEmergency->phone->phonenumber;
             $newUser->emergency_email = $newEmergency->email;
 
-		}
+        }
 
-		$newUser->username = $username;
-		$newUser->email = $email;
-		$newUser->password = $newPassword;
+        $newUser->username = $username;
+        $newUser->email = $email;
+        $newUser->password = $newPassword;
 
-		$newUser->save();
+        $newUser->save();
 
-		return true;
-	}
+        return true;
+    }
+
+    public function resetPasswordRequest($emailAddress)
+    {
+        $existingUser = User::where('email', $emailAddress)->first();
+        $userDisplayName = $existingUser->firstname . ' ' . $existingUser->surname;
+
+        $token = "blah";
+
+        $data = array('site_url' => env('SITE_BASE') . '/reset-password/' . $token);
+        Mail::send('mail', $data, function ($message) use ($emailAddress, $userDisplayName) {
+            $message->to($emailAddress, $userDisplayName)->subject('Password Reset Request');
+            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+            });
+
+        Log::info("Password reset request for " . $existingUser->username . " sent to " . $emailAddress . '.');
+    }
 }

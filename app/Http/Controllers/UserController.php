@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\JUser;
+use App\MeetEntryIncomplete;
 use App\User;
 use App\Member;
 use App\Phone;
@@ -68,6 +69,40 @@ class UserController extends Controller
                 'success' => false,
                 'message' => 'Passwords don\'t match'
             ], 400);
+        }
+    }
+
+    public function userList() {
+        if (!$this->user->is_admin) {
+            return response()->json(['error' => "You do not have access to the user list"], 403);
+        }
+
+        // TODO: Implement pagination
+        $offset = 0;
+        $num = 50;
+
+        $users = User::all();
+
+        return response()->json($users);
+    }
+
+    public function getUser($userId) {
+        $user = User::find($userId);
+
+        return response()->json([
+            'success' => true,
+            'user' => $user], 200);
+    }
+
+    private function isAdmin() {
+        if ($this->user) {
+            if ($this->user->is_admin) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
         }
     }
 
