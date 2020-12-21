@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\JUser;
+use App\PasswordResetToken;
 use App\User;
 use App\Phone;
+use mysql_xdevapi\Exception;
 use Tymon\JWTAuth\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +26,8 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => 'login']);
+        $this->middleware('auth:api', ['except' => ['login', 'resetPassword', 'verifyResetPasswordToken',
+            'resetPasswordToken']]);
     }
 
     /**
@@ -35,7 +38,6 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only(['username', 'password']);
-
 
         if (!$token = $this->guard()->attempt($credentials)) {
 
@@ -180,19 +182,172 @@ class AuthController extends Controller
         return true;
     }
 
-    public function resetPasswordRequest($emailAddress)
+    public function resetPassword($emailAddress, Request $request)
     {
         $existingUser = User::where('email', $emailAddress)->first();
+
+        if ($existingUser == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No user found with that email address!'], 200);
+        }
+
+        $admin_details = $request->only(['user_id']);
+        $adminName = '';
+        $adminUser = 0;
+        if ($admin_details != NULL) {
+            if (array_key_exists('user_id', $admin_details)) {
+                $adminUser = User::find($admin_details['user_id']);
+
+                if ($adminUser->is_admin) {
+                    $adminName = $adminUser->firstname . ' ' . $adminUser->surname;
+                }
+            }
+        }
+
         $userDisplayName = $existingUser->firstname . ' ' . $existingUser->surname;
 
-        $token = "blah";
+        $token = $this->random_str(8);
 
-        $data = array('site_url' => env('SITE_BASE') . '/reset-password/' . $token);
-        Mail::send('mail', $data, function ($message) use ($emailAddress, $userDisplayName) {
-            $message->to($emailAddress, $userDisplayName)->subject('Password Reset Request');
-            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+        $passwordReset = new PasswordResetToken();
+        $passwordReset->user_id = $existingUser->id;
+        $passwordReset->token = $token;
+        $passwordReset->valid_till = date("Y-m-d H:i:s", time() + 86400);
+        $passwordReset->used = false;
+
+        $passwordReset->save();
+
+        if ($adminName != '') {
+            $data = array('resetLink' => env('SITE_BASE') . '/reset-password/' . $token,
+                'adminName' => $adminName);
+            Mail::send('resetpasswordadmin', $data, function ($message) use ($emailAddress, $userDisplayName) {
+                $message->to($emailAddress, $userDisplayName)->subject('Password Reset Request');
+                $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
             });
+        } else {
+            $data = array('resetLink' => env('SITE_BASE') . '/reset-password/' . $token);
+            Mail::send('resetpassword', $data, function ($message) use ($emailAddress, $userDisplayName) {
+                $message->to($emailAddress, $userDisplayName)->subject('Password Reset Request');
+                $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+            });
+        }
 
         Log::info("Password reset request for " . $existingUser->username . " sent to " . $emailAddress . '.');
+
+
+        return response()->json([
+            'adminDetails' => $admin_details,
+            'adminUser' => $adminUser,
+            'success' => true], 200);
+
+    }
+
+    public function verifyResetPasswordToken($token) {
+        $passwordToken = PasswordResetToken::where('token', $token)->first();
+
+        if ($passwordToken == NULL) {
+            return response()->json([
+               'success' => true,
+               'token' => $token,
+               'valid' => false
+            ]);
+        }
+
+        if ($passwordToken->used) {
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'valid' => false
+            ]);
+        }
+
+        if (strtotime($passwordToken->valid_till) < time()) {
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'valid' => false
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'token' => $token,
+            'valid' => true
+        ]);
+
+    }
+
+    public function resetPasswordToken($token, Request $request) {
+        $passwordToken = PasswordResetToken::where('token', $token)->first();
+
+        if ($passwordToken == NULL) {
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'valid' => false
+            ]);
+        }
+
+        if ($passwordToken->used) {
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'valid' => false
+            ]);
+        }
+
+        if (strtotime($passwordToken->valid_till) < time()) {
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'valid' => false
+            ]);
+        }
+
+        $user = User::find($passwordToken->user_id);
+
+        if ($user != NULL) {
+            $newPassword = $request->only(['newPassword']);
+
+            if (!array_key_exists('newPassword', $newPassword)) {
+                return response()->json([
+                    'success' => false,
+                    'token' => $token,
+                    'valid' => true
+                ]);
+            }
+
+            $newPasswordString = $newPassword['newPassword'];
+            $passwordHash = Hash::make($newPasswordString);
+            $user->password = $passwordHash;
+            $user->save();
+
+            $passwordToken->used = true;
+            $passwordToken->save();
+
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'valid' => true
+            ]);
+
+        }
+
+
+    }
+
+    function random_str(
+        $length = 64,
+        $keyspace = '0123456789abcdefghijklmnopqrstuvwxyz') {
+        $pieces = [];
+        $max = mb_strlen($keyspace, '8bit') - 1;
+        try {
+            for ($i = 0; $i < $length; ++$i) {
+                $pieces [] = $keyspace[random_int(0, $max)];
+            }
+        } catch (Exception $e) {
+            return null;
+        }
+        return implode('', $pieces);
     }
 }

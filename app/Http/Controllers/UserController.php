@@ -72,6 +72,51 @@ class UserController extends Controller
         }
     }
 
+    public function update($userId)
+    {
+        $updateUserDetails = $this->request->all();
+        if ($this->userId == $userId || $this->user->is_admin) {
+            $existingUser = User::find($userId);
+
+            if ($existingUser->username != $updateUserDetails['username']) {
+                $usernameCheck = User::where('username', $updateUserDetails['username']);
+                if ($usernameCheck != NULL) {
+                    return response()->json([
+                        'success' => false,
+                        'username' => $updateUserDetails['username'],
+                        'message' => 'Username not available'
+                    ], 400);
+                }
+            }
+
+            $existingUser->username = $updateUserDetails['username'];
+            $existingUser->firstname = $updateUserDetails['firstname'];
+            $existingUser->surname = $updateUserDetails['surname'];
+            $existingUser->email = $updateUserDetails['email'];
+            $existingUser->phone = $updateUserDetails['phone'];
+            $existingUser->gender = $updateUserDetails['gender'];
+            $existingUser->dob = $updateUserDetails['dob'];
+            $existingUser->emergency_firstname = $updateUserDetails['emergency_firstname'];
+            $existingUser->emergency_surname = $updateUserDetails['emergency_surname'];
+            $existingUser->emergency_phone = $updateUserDetails['emergency_phone'];
+            $existingUser->emergency_email = $updateUserDetails['emergency_email'];
+
+            $existingUser->save();
+
+            return response()->json([
+                'success' => true,
+                'user' => $existingUser,
+                'message' => 'User updated'
+            ], 201);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'You do not have permission to edit this user!'
+        ], 403);
+
+    }
+
     public function userList() {
         if (!$this->user->is_admin) {
             return response()->json(['error' => "You do not have access to the user list"], 403);

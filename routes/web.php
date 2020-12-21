@@ -19,8 +19,10 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
 	$router->post('login', ['uses' => 'AuthController@login']);
     $router->post('logout', ['uses' => 'AuthController@logout']);
+    $router->post('reset/{emailAddress}', ['uses' => 'AuthController@resetPassword']);
+    $router->post('resetToken/{token}', ['uses' => 'AuthController@verifyResetPasswordToken']);
+    $router->post('resetPassword/{token}', ['uses' => 'AuthController@resetPasswordToken']);
     $router->post('refresh', ['uses' => 'AuthController@refresh']);
-    $router->post('resetPassword/{emailAddress}', ['uses' => 'AuthController@resetPasswordRequest']);
 
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
@@ -64,6 +66,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->get('users', ['middleware' => 'auth:api', 'uses' => 'UserController@userList']);
     $router->get('users/{userId}', ['middleware' => 'auth:api', 'uses' => 'UserController@getUser']);
+    $router->put('users/{userId}', ['middleware' => 'auth:api', 'uses' => 'UserController@update']);
     $router->post('users/register', ['uses' => 'UserController@register']);
     $router->post('users/link_member/{memberNumber}', ['middleware' => 'auth:api', 'uses' => 'UserController@linkMember']);
 
