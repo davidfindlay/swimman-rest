@@ -23,11 +23,15 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('resetToken/{token}', ['uses' => 'AuthController@verifyResetPasswordToken']);
     $router->post('resetPassword/{token}', ['uses' => 'AuthController@resetPasswordToken']);
     $router->post('refresh', ['uses' => 'AuthController@refresh']);
+    $router->get('generateRandomPassword', ['uses' => 'AuthController@generateSimplePassword']);
+    $router->post('changePassword/{userId}', ['middleware' => 'auth:api', 'uses' => 'AuthController@changePassword']);
 
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
 	$router->get('meets/{id}/events', ['uses' => 'MeetController@getEvents']);
+	$router->post('meets', ['middleware' => 'auth:api', 'uses' => 'MeetController@createMeet']);
+    $router->put('meets/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@updateMeet']);
 
 	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
 	$router->get('club/{id}/members', ['middleware' => 'auth:api', 'uses' => 'ClubController@getMembers']);

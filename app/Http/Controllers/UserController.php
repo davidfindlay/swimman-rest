@@ -54,7 +54,7 @@ class UserController extends Controller
                 return response()->json([
                     'success' => false,
                     'username' => $newUserDetails['username'],
-                    'message' => 'Username not available'
+                    'message' => 'This email address is already in use, please use the Forgot Password option on the Log In page to reset your password'
                 ], 400);
             }
 

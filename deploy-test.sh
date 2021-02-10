@@ -9,7 +9,9 @@ cp swimman-rest.tar.gz /var/www/html-test/
 cd /var/www/html-test/
 tar -zxvf swimman-rest.tar.gz
 rm swimman-rest.tar.gz
+sudo chown -R ec2-user:apache *
 php artisan migrate
+chmod -R 775 storage
 EOF
 rm swimman-rest.tar.gz
 rm .env

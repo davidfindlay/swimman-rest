@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\JUser;
+use App\PasswordGenerationWord;
 use App\PasswordResetToken;
 use App\User;
 use App\Phone;
@@ -199,7 +200,7 @@ class AuthController extends Controller
             if (array_key_exists('user_id', $admin_details)) {
                 $adminUser = User::find($admin_details['user_id']);
 
-                if ($adminUser->is_admin) {
+                if ($adminUser != NULL && $adminUser->is_admin) {
                     $adminName = $adminUser->firstname . ' ' . $adminUser->surname;
                 }
             }
@@ -333,7 +334,37 @@ class AuthController extends Controller
 
         }
 
+    }
 
+    public function changePassword($userId, Request $request) {
+        $user = User::find($userId);
+
+        $requestUser = $request->user();
+
+        if (!$requestUser->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permission denied. You must be an admin to perform this action'
+            ], 403);
+        }
+
+        $user->password = Hash::make($request->newPassword);
+        $user->save();
+
+        $adminName = $requestUser->firstname . ' ' . $requestUser->surname;
+        $userDisplayName = $user->firstname . ' ' . $user->surname;
+        $emailAddress = $user->email;
+
+        $data = array('newPassword' => $request->newPassword, 'adminName' => $adminName);
+        Mail::send('changepasswordadmin', $data, function ($message) use ($emailAddress, $userDisplayName) {
+            $message->to($emailAddress, $userDisplayName)->subject('Password Changed');
+            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password succesfully changed.'
+        ]);
     }
 
     function random_str(
@@ -349,5 +380,20 @@ class AuthController extends Controller
             return null;
         }
         return implode('', $pieces);
+    }
+
+    public function generateSimplePassword() {
+        $words = PasswordGenerationWord::all()->toArray();
+
+        $selectedWordItem = $words[array_rand($words)];
+        $passwordNumber = random_int(10, 99);
+
+        $generatedPassword = $selectedWordItem['word'] . $passwordNumber;
+
+        return response()->json([
+            'success' => true,
+            'words' => $selectedWordItem,
+            'password' => $generatedPassword
+        ]);
     }
 }
