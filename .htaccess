@@ -8,6 +8,7 @@
     RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
 
     RewriteRule ^static - [L,NC]
+    RewriteRule ^e-ref - [L,NC]
 
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteRule ^ public/$1 [L]

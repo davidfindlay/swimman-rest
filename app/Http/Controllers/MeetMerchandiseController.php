@@ -82,6 +82,16 @@ class MeetMerchandiseController extends Controller
             ], 403);
         }
 
+        $deadline = NULL;
+        if ($this->request->deadline != '') {
+            $deadline = $this->request->deadline;
+        }
+
+        $maxQty = NULL;
+        if ($this->request->max_qty != '') {
+            $maxQty = $this->request->max_qty;
+        }
+
         // User must be either admin or meet organiser to get to here
         $merchandise = new MeetMerchandise();
         $merchandise->meet_id = $this->request->meet_id;
@@ -90,12 +100,12 @@ class MeetMerchandiseController extends Controller
         $merchandise->description = $this->request->description;
         $merchandise->stock_control = $this->request->stock_control;
         $merchandise->stock = $this->request->stock;
-        $merchandise->deadline = $this->request->deadline;
+        $merchandise->deadline = $deadline;
         $merchandise->gst_applicable = $this->request->gst_applicable;
         $merchandise->exgst = $this->request->exgst;
         $merchandise->gst = $this->request->gst;
         $merchandise->total_price = $this->request->total_price;
-        $merchandise->max_qty = $this->request->max_qty;
+        $merchandise->max_qty = $maxQty;
         $merchandise->status = $this->request->status;
         $merchandise->saveOrFail();
 
@@ -174,7 +184,7 @@ class MeetMerchandiseController extends Controller
 
         $picName = $this->request->file('image')->getClientOriginalName();
         $path = $_SERVER['DOCUMENT_ROOT'] . '/static/meets/' . $meet_id . '/merchandise/';
-        File::makeDirectory($path, 0777, true, true);
+        File::makeDirectory($path, 0775, true, true);
         $this->request->file('image')->move($path, $picName);
 
         $merchandise = MeetMerchandise::find($merchandiseId);

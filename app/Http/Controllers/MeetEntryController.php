@@ -449,12 +449,26 @@ class MeetEntryController extends Controller {
         // TODO add better validation here.
         $meetEntry->disability_status = $classified;
         if ($classified != 0) {
-            $meetEntry->disability_s_id = DisabilityClassification::where('classification', '=',
-                $entryData->medicalDetails->classFreestyle)->first()->id;
-            $meetEntry->disability_sb_id = DisabilityClassification::where('classification', '=',
-                $entryData->medicalDetails->classBreaststroke)->first()->id;
-            $meetEntry->disability_sm_id = DisabilityClassification::where('classification', '=',
-                $entryData->medicalDetails->classMedley)->first()->id;
+
+            $classFreestyle = DisabilityClassification::where('classification', '=',
+                $entryData->medicalDetails->classFreestyle)->first();
+            $classBreaststroke = DisabilityClassification::where('classification', '=',
+                $entryData->medicalDetails->classFreestyle)->first();
+            $classMedley = DisabilityClassification::where('classification', '=',
+                $entryData->medicalDetails->classMedley)->first();
+
+            if ($classFreestyle != NULL) {
+                $meetEntry->disability_s_id = $classFreestyle->id;
+            }
+
+            if ($classBreaststroke != NULL) {
+                $meetEntry->disability_sb_id = $classBreaststroke->id;
+            }
+
+            if ($classMedley != NULL) {
+                $meetEntry->disability_sm_id = $classMedley->id;
+            }
+
         }
 
         // Does the entrant have a medical condition that requires stroke dispensation
