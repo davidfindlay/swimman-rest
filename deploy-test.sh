@@ -11,7 +11,8 @@ tar -zxvf swimman-rest.tar.gz
 rm swimman-rest.tar.gz
 sudo chown -R ec2-user:apache *
 php artisan migrate
-chmod -R 775 storage
+sudo chown -R ec2-user:apache *
+sudo chmod -R 775 *
 EOF
 rm swimman-rest.tar.gz
 rm .env

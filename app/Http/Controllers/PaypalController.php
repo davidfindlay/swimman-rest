@@ -177,7 +177,7 @@ class PaypalController extends Controller {
             // Log::error('Exception while trying to create payment', $ex);
 
             \Sentry\captureException($ex);
-            \Sentry\captureMessage($ex->getTrace());
+//            \Sentry\captureMessage($ex->getTrace());
 
             return response()->json([
                 'success' => false,

@@ -196,7 +196,9 @@ class MeetEntryController extends Controller {
         foreach ($entry as $e) {
             $e->entrydata = json_decode($e->entrydata);
             $e['status'] = $e->status;
-            array_push($outputEntries, $e);
+            if (!$e->status->cancelled) {
+                array_push($outputEntries, $e);
+            }
         }
         return response()->json($outputEntries);
     }
@@ -227,6 +229,14 @@ class MeetEntryController extends Controller {
 
             $entrantDetails = $entryData->entrantDetails;
             $membershipDetails = $entryData->membershipDetails;
+
+            if ($membershipDetails->member_number == '0') {
+                $membershipDetails->member_number = '';
+            }
+
+            if ($membershipDetails->member_number < 5) {
+                $membershipDetails->member_number = '';
+            }
 
             // If the Entrant DOB is the wrong format, fix it
             if (strpos($entrantDetails->entrantDob, '/') !== false) {
@@ -312,7 +322,7 @@ class MeetEntryController extends Controller {
 
                 } else {
 
-                    if ($memberSearch->surname != $entrantDetails->entrantSurname ||
+                    if (strtoupper($memberSearch->surname) != strtoupper($entrantDetails->entrantSurname) ||
                         $memberSearch->dob != $entrantDetails->entrantDob) {
 
                         // Membership number supplied does not match entrant details
@@ -326,32 +336,12 @@ class MeetEntryController extends Controller {
                             'status_id' => $pendingStatus->id,
                             'explanation' => $pendingReason,
                             'status_label' => $pendingStatus->label,
+                            'debug' => strtoupper($memberSearch->surname) . ' - ' . strtoupper($entrantDetails->entrantSurname) . ' - ' .
+                                $memberSearch->dob . ' - ' . $entrantDetails->entrantDob,
                             'status_description' => $pendingStatus->description], 200);
                     }
                 }
             }
-
-            $entryMemberId = Member::where('number', '=', $membershipDetails->member_number)->first();
-
-            // Allow entries by anyone
-//            if ($this->user->member != $entryMemberId->id) {
-//                $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
-//                $entry->status_id = $pendingStatus->id;
-//                $pendingReason = 'User linked member doesn\'t match entry member.';
-//                $entry->pending_reason = $pendingReason;
-//                $entry->saveOrFail();
-//                $entry->entrydata = json_decode($entry->entrydata, true);
-//                return response()->json(['pending_entry' => $entry,
-//                    'status_id' => $pendingStatus->id,
-//                    'explanation' => $pendingReason,
-//                    'status_label' => $pendingStatus->label,
-//                    'status_description' => $pendingStatus->description], 200);
-//            }
-
-//            return response()->json(['age' => $age,
-//                'gender' => $gender,
-//                'ageUpDate' => $ageUpDate,
-//                'dob' => $member->dob]);
 
             // Does Member already have entry for this event?
             $editMode = false;
@@ -359,8 +349,6 @@ class MeetEntryController extends Controller {
                 && $entry->edit_mode) {
                 $editMode = true;
             }
-
-//            return response()->json(['pending_entry' => $entry], 200);
 
             return $this->createOrUpdateEntry($entry, $editMode);
 
@@ -957,8 +945,17 @@ class MeetEntryController extends Controller {
             $e->event;
         }
 
+        $merchandise = MeetEntryOrder::where('meet_entries_id', '=', $entry->id)->get();
+        foreach ($merchandise as $order) {
+            $items = $order->items;
+            foreach ($items as $item) {
+                $item->merchandise;
+            }
+        }
+
         return response()->json(['success' => true,
-            'meet_entry' => $entry]);
+            'meet_entry' => $entry,
+            'merchandise' => $merchandise]);
     }
 
     public function getSubmittedEntriesByMemberNumber($number) {
@@ -1080,5 +1077,9 @@ class MeetEntryController extends Controller {
         } else {
             return true;
         }
+    }
+
+    public function sendConfirmationEmail($entryId) {
+        
     }
 }
