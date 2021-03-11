@@ -11,6 +11,9 @@ namespace App\Http\Controllers;
 use App\DisabilityClassification;
 use App\MeetAccess;
 use App\MeetEntry;
+use App\MeetEvent;
+use App\EventDiscipline;
+use App\EventDistance;
 use App\MeetEntryEvent;
 use App\MeetEntryOrder;
 use App\MeetEntryPayment;
@@ -27,6 +30,7 @@ use App\AgeGroup;
 use App\PayPalPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use mysql_xdevapi\Exception;
 use Psr\Log\NullLogger;
 
@@ -1079,7 +1083,109 @@ class MeetEntryController extends Controller {
         }
     }
 
-    public function sendConfirmationEmail($entryId) {
-        
+    public function sendConfirmationEmail($id) {
+
+        $entryId = intval($id);
+
+        $entry = MeetEntry::find($entryId);
+
+        if ($entry == NULL) {
+            return response()->json(['success' => false,
+                'message' => 'Meet entry not found.'], 404);
+        }
+
+        $entry->member;
+        $entry->meet;
+        $entry->events;
+        $entry->member->emails;
+        $entry->member->memberships;
+
+        $meetName = $entry->meet->meetname;
+        $emails = $entry->member->emails;
+
+        $events = array();
+
+        $eventDetails = null;
+
+        foreach ($entry->events as $e) {
+            $entryEvent = $e->event;
+            $eventItem = array();
+            $eventItem['prognumber'] = $entryEvent->prognumber . $entryEvent->progsuffix;
+            $eventItem['details'] = $entryEvent->eventDistance->distance . ' ' . $entryEvent->eventDiscipline->discipline;
+            $eventItem['seedtime'] = $this->sw_formatSecs($e->seedtime);
+            array_push($events, $eventItem);
+        }
+
+        if (count($emails) > 0) {
+
+
+
+            $emailAddress = $emails[0]->address;
+        }
+
+        $memberDisplayName = $entry->member->firstname . ' ' . $entry->member->surname;
+
+        $items = array();
+
+//        $orders = MeetEntryOrder::where('meet_entries_id', '=', $entryId);
+//        foreach ($orders as $o) {
+//            $orderItems = MeetEntryOrderItem::where('meet_entry_orders_id', '=', $o->id);
+//            foreach ($orderItems as $i) {
+//                $i->merchandise;
+//                $item = array();
+//                $item['itemNumber'] = $i->merchandise->sku;
+//                $item['itemName'] = $i->merchandise->item_name;
+//                $item['unitPrice'] = $i->price_each_exgst;
+//                $item['qty'] = $i->qty;
+//                $item['subtotal'] = $i->price_total_exgst;
+//                array_push($items, $item);
+//            }
+//        }
+
+        $data = array('entry' => $entry, 'events' => $events, 'items' => $items);
+        Mail::send('entryconfirmation', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
+            $message->to($emailAddress, $memberDisplayName)->subject('Entry Confirmation - ' . $meetName);
+            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Meet Entry Confirmation email sent to ' . $emailAddress . '.'
+        ]);
+    }
+
+    public function sw_formatSecs($secTime) {
+
+        if (!strpbrk($secTime, '.')) {
+
+            $secTimeSecs = $secTime;
+            $secTimeMs = "00";
+
+        } else {
+
+            list($secTimeSecs, $secTimeMs) = explode('.', $secTime);
+
+            if (strlen($secTimeMs) == 1) {
+
+                $secTimeMs = $secTimeMs . '0';
+
+            }
+
+        }
+
+        if ($secTime < 60) {
+            $secTimeDisp = ($secTimeSecs % 60) . '.' . $secTimeMs;
+        } else {
+            $secTimeDisp = floor($secTimeSecs / 60) . ':' . sprintf("%02d", ($secTimeSecs % 60)) . '.' . $secTimeMs;
+        }
+
+        if ($secTimeDisp == "0:00.00") {
+
+            $secTimeDisp = "NT";
+
+        }
+
+        return $secTimeDisp;
+
     }
 }
