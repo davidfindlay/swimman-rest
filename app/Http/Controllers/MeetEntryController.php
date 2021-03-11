@@ -1119,12 +1119,7 @@ class MeetEntryController extends Controller {
             array_push($events, $eventItem);
         }
 
-        if (count($emails) > 0) {
-
-
-
-            $emailAddress = $emails[0]->address;
-        }
+        $emailAddress = $emails->last()->address;
 
         $memberDisplayName = $entry->member->firstname . ' ' . $entry->member->surname;
 
