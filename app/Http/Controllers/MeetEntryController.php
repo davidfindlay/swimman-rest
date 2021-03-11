@@ -11,6 +11,7 @@ namespace App\Http\Controllers;
 use App\DisabilityClassification;
 use App\MeetAccess;
 use App\MeetEntry;
+use App\MeetEntryEmails;
 use App\MeetEvent;
 use App\EventDiscipline;
 use App\EventDistance;
@@ -33,6 +34,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use mysql_xdevapi\Exception;
 use Psr\Log\NullLogger;
+
+use DateTime;
 
 class MeetEntryController extends Controller {
 
@@ -1147,6 +1150,12 @@ class MeetEntryController extends Controller {
             $message->to($emailAddress, $memberDisplayName)->subject('Entry Confirmation - ' . $meetName);
             $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
         });
+
+        $entryEmail = new MeetEntryEmails();
+        $entryEmail->meet_entry_id = $entryId;
+        $objDateTime = new DateTime('NOW');
+        $entryEmail->timestamp = $objDateTime->format('Y-m-d H:i:s');
+        $entryEmail->save();
 
         return response()->json([
             'success' => true,
