@@ -56,6 +56,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('meet_entries', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntries']);
     $router->get('meet_entry/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getMeetEntry']);
     $router->post('meet_entry/{id}/resendConfirmation', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@sendConfirmationEmail']);
+    $router->post('pending_entry/{id}/resendConfirmation', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@sendPendingConfirmationEmail']);
     $router->get('meet_entry_by_code/{id}', ['uses' => 'MeetEntryController@getMeetEntryByCode']);
 
     $router->get('meet_entries_by_member_number/{number}', ['middleware' => 'auth:api', 'uses' => 'MeetEntryController@getSubmittedEntriesByMemberNumber']);

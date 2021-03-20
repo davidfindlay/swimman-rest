@@ -1,4 +1,4 @@
-Thank you for registering for the {{$meetname}}.
+<p>Thank you for registering for the {{$meetname}}. Your entry is currently awaiting processing.</p>
 
 <table border="0">
     <tr>
@@ -28,8 +28,9 @@ Thank you for registering for the {{$meetname}}.
 </table>
 
 @if (count($items) > 0)
-    Your purchase from Quick Entry has been processed.
-    Below is a summary of the purchase details.
+    <p>
+    Your order from Quick Entry has been received.
+        Below is a summary of the order details.</p>
 
     <table border="0">
         <thead>
@@ -87,7 +88,9 @@ Thank you for registering for the {{$meetname}}.
     separate email from Paypal.</p>
 
 <p>
+    <strong>
 Your entry details:
+    </strong>
 </p>
 <table border="0">
     <thead>

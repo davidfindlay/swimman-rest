@@ -237,11 +237,11 @@ class MeetEntryController extends Controller {
             $entrantDetails = $entryData->entrantDetails;
             $membershipDetails = $entryData->membershipDetails;
 
-            if ($membershipDetails->member_number == '0') {
+            if (strval($membershipDetails->member_number) == '0') {
                 $membershipDetails->member_number = '';
             }
 
-            if ($membershipDetails->member_number < 5) {
+            if (strval($membershipDetails->member_number) < 5) {
                 $membershipDetails->member_number = '';
             }
 
@@ -260,7 +260,16 @@ class MeetEntryController extends Controller {
                 $pendingReason = 'Logged in non-msa member, entry set to pending.';
                 $entry->pending_reason = $pendingReason;
                 $entry->saveOrFail();
+
+                // Send confirmation email
+                try {
+                    $this->pendingEmail($entry);
+                } catch (Exception $e) {
+                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                }
+
                 $entry->entrydata = json_decode($entry->entrydata, true);
+
                 return response()->json(['pending_entry' => $entry,
                     'status_id' => $pendingStatus->id,
                     'explanation' => $pendingReason,
@@ -275,7 +284,16 @@ class MeetEntryController extends Controller {
                 $pendingReason = 'Club ID is set to other';
                 $entry->pending_reason = $pendingReason;
                 $entry->saveOrFail();
+
+                // Send confirmation email
+                try {
+                    $this->pendingEmail($entry);
+                } catch (Exception $e) {
+                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                }
+
                 $entry->entrydata = json_decode($entry->entrydata, true);
+
                 return response()->json(['pending_entry' => $entry,
                     'status_id' => $pendingStatus->id,
                     'explanation' => $pendingReason,
@@ -285,8 +303,8 @@ class MeetEntryController extends Controller {
 
             // If member number isn't set leave the entry as pending
             if ($membershipDetails->member_number == '') {
-                $memberSearch = Member::where('surname', '=', $entrantDetails->entrantSurname)
-                    ->where('firstname', '=', $entrantDetails->entrantFirstName)
+                $memberSearch = Member::where('surname', '=', trim($entrantDetails->entrantSurname))
+                    ->where('firstname', '=', trim($entrantDetails->entrantFirstName))
                     ->where('dob', '=', $entrantDetails->entrantDob)
                     ->first();
 
@@ -297,7 +315,16 @@ class MeetEntryController extends Controller {
                     $pendingReason = 'Member number not provided, member not found.';
                     $entry->pending_reason = $pendingReason;
                     $entry->saveOrFail();
+
+                    // Send confirmation email
+                    try {
+                        $this->pendingEmail($entry);
+                    } catch (Exception $e) {
+                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    }
+
                     $entry->entrydata = json_decode($entry->entrydata, true);
+
                     return response()->json(['pending_entry' => $entry,
                         'status_id' => $pendingStatus->id,
                         'explanation' => $pendingReason,
@@ -309,7 +336,9 @@ class MeetEntryController extends Controller {
                     $entry->entrydata = json_encode($entryData);
                 }
             } else {
-                $memberSearch = Member::where('number', '=', $membershipDetails->member_number)
+                $memberSearch = Member::where('number', '=', trim(strval($membershipDetails->member_number)))
+                    ->where('surname', '=', trim($entrantDetails->surname))
+                    ->where('dob', '=', $entrantDetails->entrantDob)
                     ->first();
 
                 if (!isset($memberSearch)) {
@@ -317,9 +346,17 @@ class MeetEntryController extends Controller {
                     // Membership number supplied does not match entrant details
                     $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
                     $entry->status_id = $pendingStatus->id;
-                    $pendingReason = 'Member number supplied not found.';
+                    $pendingReason = 'Member details supplied not found.';
                     $entry->pending_reason = $pendingReason;
                     $entry->saveOrFail();
+
+                    // Send confirmation email
+                    try {
+                        $this->pendingEmail($entry);
+                    } catch (Exception $e) {
+                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    }
+
                     $entry->entrydata = json_decode($entry->entrydata, true);
                     return response()->json(['pending_entry' => $entry,
                         'status_id' => $pendingStatus->id,
@@ -327,26 +364,6 @@ class MeetEntryController extends Controller {
                         'status_label' => $pendingStatus->label,
                         'status_description' => $pendingStatus->description], 200);
 
-                } else {
-
-                    if (strtoupper($memberSearch->surname) != strtoupper($entrantDetails->entrantSurname) ||
-                        $memberSearch->dob != $entrantDetails->entrantDob) {
-
-                        // Membership number supplied does not match entrant details
-                        $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
-                        $entry->status_id = $pendingStatus->id;
-                        $pendingReason = 'Member number supplied does not match entrant details.';
-                        $entry->pending_reason = $pendingReason;
-                        $entry->saveOrFail();
-                        $entry->entrydata = json_decode($entry->entrydata, true);
-                        return response()->json(['pending_entry' => $entry,
-                            'status_id' => $pendingStatus->id,
-                            'explanation' => $pendingReason,
-                            'status_label' => $pendingStatus->label,
-                            'debug' => strtoupper($memberSearch->surname) . ' - ' . strtoupper($entrantDetails->entrantSurname) . ' - ' .
-                                $memberSearch->dob . ' - ' . $entrantDetails->entrantDob,
-                            'status_description' => $pendingStatus->description], 200);
-                    }
                 }
             }
 
@@ -396,6 +413,14 @@ class MeetEntryController extends Controller {
                 $pendingReason = 'Existing entry found for this meet, so entry set to pending.';
                 $entry->pending_reason = $pendingReason;
                 $entry->saveOrFail();
+
+                // Send confirmation email
+                try {
+                    $this->pendingEmail($entry);
+                } catch (Exception $e) {
+                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                }
+
                 $entry->entrydata = json_decode($entry->entrydata, true);
                 $entry->status;
                 return response()->json(['pending_entry' => $entry,
@@ -606,7 +631,18 @@ class MeetEntryController extends Controller {
         }
 
         $meetEntryCreated = MeetEntry::find($meetEntryId);
+
+        // TODO: this seems wrong
         $meetEntryCreated['events'] = MeetEntryEvent::where('meet_entry_id', '=', $meetEntryId);
+
+        // Send confirmation email
+        try {
+            $meetEntryConfirmation = MeetEntry::find($meetEntryId);
+            $this->confirmationEmail($meetEntryConfirmation);
+        } catch (Exception $e) {
+            \Sentry\captureException($e);
+            \Sentry\captureMessage('Exception when sending confirmation email: ' . $e->getMessage());
+        }
 
         // Don't
         if (! $editMode) {
@@ -1089,7 +1125,6 @@ class MeetEntryController extends Controller {
     public function sendConfirmationEmail($id) {
 
         $entryId = intval($id);
-
         $entry = MeetEntry::find($entryId);
 
         if ($entry == NULL) {
@@ -1097,65 +1132,17 @@ class MeetEntryController extends Controller {
                 'message' => 'Meet entry not found.'], 404);
         }
 
-        $entry->member;
-        $entry->meet;
-        $entry->events;
-        $entry->member->emails;
-        $entry->member->memberships;
-
-        $meetName = $entry->meet->meetname;
-        $emails = $entry->member->emails;
-
-        $events = array();
-
-        $eventDetails = null;
-
-        foreach ($entry->events as $e) {
-            $entryEvent = $e->event;
-            $eventItem = array();
-            $eventItem['prognumber'] = $entryEvent->prognumber . $entryEvent->progsuffix;
-            $eventItem['details'] = $entryEvent->eventDistance->distance . ' ' . $entryEvent->eventDiscipline->discipline;
-            $eventItem['seedtime'] = $this->sw_formatSecs($e->seedtime);
-            array_push($events, $eventItem);
+        try {
+            $emailAddress = $this->confirmationEmail($entry);
+            return response()->json([
+                'success' => true,
+                'message' => 'Meet Entry Confirmation email sent to ' . $emailAddress . '.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false,
+                'message' => 'Unable to send email for entry id ' . $entryId . ': ' . $e->getMessage()], 400);
         }
 
-        $emailAddress = $emails->last()->address;
-
-        $memberDisplayName = $entry->member->firstname . ' ' . $entry->member->surname;
-
-        $items = array();
-
-//        $orders = MeetEntryOrder::where('meet_entries_id', '=', $entryId);
-//        foreach ($orders as $o) {
-//            $orderItems = MeetEntryOrderItem::where('meet_entry_orders_id', '=', $o->id);
-//            foreach ($orderItems as $i) {
-//                $i->merchandise;
-//                $item = array();
-//                $item['itemNumber'] = $i->merchandise->sku;
-//                $item['itemName'] = $i->merchandise->item_name;
-//                $item['unitPrice'] = $i->price_each_exgst;
-//                $item['qty'] = $i->qty;
-//                $item['subtotal'] = $i->price_total_exgst;
-//                array_push($items, $item);
-//            }
-//        }
-
-        $data = array('entry' => $entry, 'events' => $events, 'items' => $items);
-        Mail::send('entryconfirmation', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
-            $message->to($emailAddress, $memberDisplayName)->subject('Entry Confirmation - ' . $meetName);
-            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
-        });
-
-        $entryEmail = new MeetEntryEmails();
-        $entryEmail->meet_entry_id = $entryId;
-        $objDateTime = new DateTime('NOW');
-        $entryEmail->timestamp = $objDateTime->format('Y-m-d H:i:s');
-        $entryEmail->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Meet Entry Confirmation email sent to ' . $emailAddress . '.'
-        ]);
     }
 
     public function sw_formatSecs($secTime) {
@@ -1183,7 +1170,7 @@ class MeetEntryController extends Controller {
             $secTimeDisp = floor($secTimeSecs / 60) . ':' . sprintf("%02d", ($secTimeSecs % 60)) . '.' . $secTimeMs;
         }
 
-        if ($secTimeDisp == "0:00.00") {
+        if ($secTimeDisp == "0:00.00" || $secTimeDisp == '0.00') {
 
             $secTimeDisp = "NT";
 
@@ -1191,5 +1178,229 @@ class MeetEntryController extends Controller {
 
         return $secTimeDisp;
 
+    }
+
+    public function confirmationEmail($entry) {
+
+        $entry->member;
+        $meet = $entry->meet;
+        $entry->events;
+        $entry->member->emails;
+        $entry->member->memberships;
+        $club = $entry->club;
+
+        $meetName = $entry->meet->meetname;
+        $emails = $entry->member->emails;
+
+        $events = array();
+
+        $eventDetails = null;
+
+        foreach ($entry->events as $e) {
+            $entryEvent = $e->event;
+            $eventItem = array();
+            $eventItem['prognumber'] = $entryEvent->prognumber . $entryEvent->progsuffix;
+            $eventItem['details'] = $entryEvent->eventDistance->distance . ' ' . $entryEvent->eventDiscipline->discipline;
+            $eventItem['seedtime'] = $this->sw_formatSecs($e->seedtime);
+            array_push($events, $eventItem);
+        }
+
+        $emailAddress = $emails->last()->address;
+
+        $memberDisplayName = $entry->member->firstname . ' ' . $entry->member->surname;
+        $entrantName = $memberDisplayName;
+
+        $meetName = $meet->meetname;
+        $meetDate = '';
+        $mealName = '';
+        $mealsOrdered = 0;
+        $total = 0;
+        $totalgst = 0;
+
+        if ($meet->startdate != $meet->enddate) {
+            $startDt = new DateTime($meet->startdate);
+            if ($meet->enddate != NULL) {
+                $endDt = new DateTime($meet->enddate);
+                $meetDate = $startDt->format('l j F, Y') . ' - ' . $endDt->format('l j F, Y');
+            } else {
+                $meetDate = $startDt->format('l j F, Y');
+            }
+        } else {
+            $startDt = new DateTime($meet->startdate);
+            $meetDate = $startDt->format('l j F, Y');
+        }
+
+        $items = array();
+
+        $orders = $entry->orders;
+
+        foreach ($orders as $o) {
+            $orderItems = $o->items();
+            foreach ($orderItems as $i) {
+                $i->merchandise;
+                $item = array();
+                $item['itemNumber'] = $i->merchandise->sku;
+                $item['itemName'] = $i->merchandise->item_name;
+                $item['unitPrice'] = $i->price_each_exgst;
+                $item['qty'] = $i->qty;
+                $item['subtotal'] = $i->price_total_exgst;
+                array_push($items, $item);
+            }
+        }
+
+        $clubName = '';
+        if ($club != NULL) {
+            $clubName = $club->clubname . ' (' . $club->code . ')';
+        }
+
+        $data = array('entry' => $entry,
+            'meetname' => $meetName,
+            'entrantName' => $entrantName,
+            'clubName' => $clubName,
+            'mealName' => $mealName,
+            'mealsOrdered' => $mealsOrdered,
+            'meetDate' => $meetDate,
+            'total' => $total,
+            'totalgst' => $totalgst,
+            'events' => $events,
+            'items' => $items);
+
+        Mail::send('entryconfirmation', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
+            $message->to($emailAddress, $memberDisplayName)->subject('Entry Confirmation - ' . $meetName);
+            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+        });
+
+        $entryEmail = new MeetEntryEmails();
+        $entryEmail->meet_entry_id = $entry->id;
+        $objDateTime = new DateTime('NOW');
+        $entryEmail->timestamp = $objDateTime->format('Y-m-d H:i:s');
+        $entryEmail->save();
+
+        return $emailAddress;
+    }
+
+    public function sendPendingConfirmationEmail($id) {
+
+        $entryId = intval($id);
+
+        $entry = MeetEntryIncomplete::find($entryId);
+
+        if ($entry == NULL) {
+            return response()->json(['success' => false,
+                'message' => 'Meet entry not found.'], 404);
+        }
+
+        try {
+            $emailAddress = $this->pendingEmail($entry);
+            return response()->json([
+                'success' => true,
+                'message' => 'Meet Entry Confirmation email sent to ' . $emailAddress . '.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false,
+                'message' => 'Unable to send email for entry id ' . $entryId . ': ' . $e->getMessage()], 400);
+        }
+
+    }
+
+    public function pendingEmail($pendingEntry) {
+
+        $entryData = json_decode($pendingEntry['entrydata'], true);
+        $emailAddress = $entryData['entrantDetails']['entrantEmail'];
+        $memberDisplayName = $entryData['entrantDetails']['entrantFirstName'] . ' ' . $entryData['entrantDetails']['entrantSurname'];
+        $entrantName = $entryData['entrantDetails']['entrantFirstName'] . ' ' . $entryData['entrantDetails']['entrantSurname'];
+        $clubName = '';
+
+        if (array_key_exists('club_name', $entryData['membershipDetails'])) {
+            if ($entryData['membershipDetails']['club_name'] != NULL) {
+                $clubName = $entryData['membershipDetails']['club_name'];
+            }
+        }
+
+        $meetId = intval($pendingEntry['meet_id']);
+
+        $meet = Meet::find($meetId);
+        $meetName = $meet->meetname;
+        $meetDate = '';
+        $mealName = '';
+        $mealsOrdered = 0;
+        $total = 0;
+        $totalgst = 0;
+
+        $items = array();
+
+        if ($meet->mealname != NULL && $meet->mealname != '') {
+            if (array_key_exists('mealMerchandiseDetails', $entryData))  {
+                if (array_key_exists('meals', $entryData['mealMerchandiseDetails'])) {
+                    $mealName = $meet->mealname;
+                    $mealsOrdered = intval($entryData['mealMerchandiseDetails']['meals']);
+                }
+
+                if (array_key_exists('merchandiseItems', $entryData['mealMerchandiseDetails'])) {
+                    foreach ($entryData['mealMerchandiseDetails']['merchandiseItems'] as $m) {
+                        $item = array();
+                        $item['qty'] = $m['qty'];
+
+                        $itemDetails = MeetMerchandise::find($m['merchandiseId']);
+                        $item['itemNumber'] = $itemDetails->sku;
+                        $item['itemName'] = $itemDetails->item_name;
+                        $item['unitPrice'] = $itemDetails->exgst + $itemDetails->gst;;
+                        $item['subtotal'] = $item['unitPrice'] * $m['qty'];
+
+                        $totalgst += $itemDetails->gst * $m['qty'];
+                        $total += $item['subtotal'];
+
+                        array_push($items, $item);
+
+                    }
+                }
+            }
+        }
+
+        if ($meet->startdate != $meet->enddate) {
+            $startDt = new DateTime($meet->startdate);
+            if ($meet->enddate != NULL) {
+                $endDt = new DateTime($meet->enddate);
+                $meetDate = $startDt->format('l j F, Y') . ' - ' . $endDt->format('l j F, Y');
+            } else {
+                $meetDate = $startDt->format('l j F, Y');
+            }
+        } else {
+            $startDt = new DateTime($meet->startdate);
+            $meetDate = $startDt->format('l j F, Y');
+        }
+
+        $events = array();
+
+        foreach ($entryData['entryEvents'] as $e) {
+            $entryEvent = array();
+            $entryEvent['prognumber'] = $e['program_no'];
+            $entryEvent['details'] = $e['distance'] . ' ' . $e['discipline'];
+            $entryEvent['seedtime'] = $this->sw_formatSecs($e['seedtime']);
+            array_push($events, $entryEvent);
+        }
+
+        $data = array('meetname' => $meetName,
+            'meetDate' => $meetDate,
+            'entrantName' => $entrantName,
+            'clubName' => $clubName,
+            'mealName' => $mealName,
+            'mealsOrdered' => $mealsOrdered,
+            'events' => $events,
+            'total' => $total,
+            'totalgst' => $totalgst,
+            'items' => $items);
+        Mail::send('pendingentryconfirmation', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
+            $message->to($emailAddress, $memberDisplayName)->subject('Entry Received - ' . $meetName);
+            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+        });
+
+//        $entryEmail = new MeetEntryEmails();
+//        $entryEmail->meet_entry_id = $entry->id;
+//        $objDateTime = new DateTime('NOW');
+//        $entryEmail->timestamp = $objDateTime->format('Y-m-d H:i:s');
+//        $entryEmail->save();
+
+        return $emailAddress;
     }
 }

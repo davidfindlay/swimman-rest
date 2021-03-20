@@ -83,4 +83,8 @@ class MeetEntry extends Model
 	    return $this->hasMany('App\MeetEntryPayment', 'entry_id', 'id');
     }
 
+    public function orders() {
+	    return $this->hasMany('App\MeetEntryOrder', 'meet_entries_id', 'id');
+    }
+
 }
