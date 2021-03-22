@@ -23,7 +23,8 @@ class MeetEntryIncomplete extends Model
 		'entrydata',
         'pending_reason',
         'code',
-        'finalised_at'
+        'finalised_at',
+        'meet_entry_id'
 	];
 
 //	protected $with = [
@@ -44,6 +45,10 @@ class MeetEntryIncomplete extends Model
 
     public function member() {
         return $this->hasOne("App\Member", 'id', 'member_id');
+    }
+
+    public function meet_entry() {
+	    return $this->hasOne('App\MeetEntry', 'id', 'id');
     }
 
 }

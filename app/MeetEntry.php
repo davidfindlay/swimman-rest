@@ -36,7 +36,8 @@ class MeetEntry extends Model
         'medical_condition',
         'medical_safety',
         'medical_details',
-        'code'
+        'code',
+        'incomplete_entry_id'
 	];
 
 	public function meet() {
@@ -85,6 +86,10 @@ class MeetEntry extends Model
 
     public function orders() {
 	    return $this->hasMany('App\MeetEntryOrder', 'meet_entries_id', 'id');
+    }
+
+    public function incomplete_entry() {
+	    return $this->hasOne('App\MeetEntryIncomplete', 'id', 'id');
     }
 
 }
