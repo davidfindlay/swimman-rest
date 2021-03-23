@@ -245,7 +245,7 @@ class PaypalController extends Controller {
         }
 
         if (isset($entryData->mealMerchandiseDetails)) {
-            $mealCost += $entryData->mealMerchandiseDetails->meals * $meet->mealfee;
+            $mealCost += intval($entryData->mealMerchandiseDetails->meals) * floatval($meet->mealfee);
 
             if (isset($entryData->mealMerchandiseDetails->merchandiseItems)) {
                 foreach ($entryData->mealMerchandiseDetails->merchandiseItems as $m) {
@@ -254,7 +254,7 @@ class PaypalController extends Controller {
                     $itemCost = 0;
 
                     if ($merchandiseDetails !== NULL) {
-                        $itemCost = $merchandiseDetails->total_price * $m->qty;
+                        $itemCost = floatval($merchandiseDetails->total_price) * intval($m->qty);
                     }
 
                     $merchandiseCost += $itemCost;
