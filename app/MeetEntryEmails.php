@@ -18,7 +18,7 @@ class MeetEntryEmails extends Model
 	protected $fillable = [
 		'meet_entry_id',
         'timestamp',
-
+        'email_address'
 	];
 
 }

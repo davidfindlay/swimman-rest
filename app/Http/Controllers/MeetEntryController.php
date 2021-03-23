@@ -1272,6 +1272,7 @@ class MeetEntryController extends Controller {
 
         $entryEmail = new MeetEntryEmails();
         $entryEmail->meet_entry_id = $entry->id;
+        $entryEmail->email_address = $emailAddress;
         $objDateTime = new DateTime('NOW');
         $entryEmail->timestamp = $objDateTime->format('Y-m-d H:i:s');
         $entryEmail->save();
@@ -1395,11 +1396,25 @@ class MeetEntryController extends Controller {
             $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
         });
 
-//        $entryEmail = new MeetEntryEmails();
-//        $entryEmail->meet_entry_id = $entry->id;
-//        $objDateTime = new DateTime('NOW');
-//        $entryEmail->timestamp = $objDateTime->format('Y-m-d H:i:s');
-//        $entryEmail->save();
+        // Store email data
+        try {
+            $email_data = array();
+            $email_dt = new DateTime('NOW');
+            $email_data['datetime'] = $email_dt->format(DateTime::ISO8601);
+            $email_data['email_address'] = $emailAddress;
+
+            if (!array_key_exists('email_confirmations', $entryData)) {
+                $entryData['email_confirmations'] = array();
+            }
+
+            array_push($entryData['email_confirmations'], $email_data);
+
+            $pendingEntry->entrydata = json_encode($this->request->input('entrydata'));
+            $pendingEntry->save();
+        } catch (Exception $e) {
+            \Sentry\captureException($e);
+            \Sentry\captureMessage('Exception when sending pending confirmation email: ' . $e->getMessage());
+        }
 
         return $emailAddress;
     }
