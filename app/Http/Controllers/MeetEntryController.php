@@ -337,7 +337,7 @@ class MeetEntryController extends Controller {
                 }
             } else {
                 $memberSearch = Member::where('number', '=', trim(strval($membershipDetails->member_number)))
-                    ->where('surname', '=', trim($entrantDetails->surname))
+                    ->where('surname', '=', trim($entrantDetails->entrantSurname))
                     ->where('dob', '=', $entrantDetails->entrantDob)
                     ->first();
 
@@ -1409,7 +1409,7 @@ class MeetEntryController extends Controller {
 
             array_push($entryData['email_confirmations'], $email_data);
 
-            $pendingEntry->entrydata = json_encode($this->request->input('entrydata'));
+            $pendingEntry->entrydata = json_encode($entryData);
             $pendingEntry->save();
         } catch (Exception $e) {
             \Sentry\captureException($e);
