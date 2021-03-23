@@ -1235,16 +1235,19 @@ class MeetEntryController extends Controller {
         $orders = $entry->orders;
 
         foreach ($orders as $o) {
-            $orderItems = $o->items();
+            $orderItems = $o->items()->get();
             foreach ($orderItems as $i) {
-                $i->merchandise;
+                $merchandise = $i->merchandise;
                 $item = array();
                 $item['itemNumber'] = $i->merchandise->sku;
                 $item['itemName'] = $i->merchandise->item_name;
-                $item['unitPrice'] = $i->price_each_exgst;
+                $item['unitPrice'] = $i->merchandise->gst;
                 $item['qty'] = $i->qty;
-                $item['subtotal'] = $i->price_total_exgst;
+                $item['subtotal'] = $i->merchandise->gst * $i->qty;
                 array_push($items, $item);
+
+                $totalgst += ($i->merchandise->gst - $i->merchandise->exgst) * $i->qty;
+                $total += $item['subtotal'];
             }
         }
 

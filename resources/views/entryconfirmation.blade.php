@@ -28,8 +28,10 @@ Thank you for registering for the {{$meetname}}.
 </table>
 
 @if (count($items) > 0)
+    <p>
     Your purchase from Quick Entry has been processed.
     Below is a summary of the purchase details.
+    </p>
 
     <table border="0">
         <thead>
