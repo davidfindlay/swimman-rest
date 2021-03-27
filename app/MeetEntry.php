@@ -92,4 +92,8 @@ class MeetEntry extends Model
 	    return $this->hasOne('App\MeetEntryIncomplete', 'id', 'id');
     }
 
+    public function emails() {
+	    return $this->hasMany('App\MeetEntryEmails', 'meet_entry_id', 'id');
+    }
+
 }

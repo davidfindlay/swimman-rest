@@ -813,7 +813,13 @@ class MeetEntryController extends Controller {
         $entries = MeetEntry::where('member_id', '=', $this->user->member)->get();
 
         foreach ($entries as $e) {
-            $e->events;
+            $e['meet'] = $e->meet;
+            $e['meet']->events;
+
+            foreach ($e->events as $event) {
+                $event->event;
+            }
+
             $e->club;
             $e->member;
             $e->age_group;
@@ -822,6 +828,7 @@ class MeetEntryController extends Controller {
             $e->disability_sb;
             $e->disability_sm;
             $e->payments;
+            $e['emails'] = $e->emails;
 
             $status = MeetEntryStatus::where('entry_id', '=', $e->id)
                 ->orderBy('id', 'DESC')
@@ -830,6 +837,9 @@ class MeetEntryController extends Controller {
                 $status->status;
                 $e['status'] = $status;
             }
+
+            $e['status_history'] = MeetEntryStatus::where('entry_id', '=', $e->id)
+                ->orderBy('id', 'DESC')->get();
 
         }
 
@@ -1205,7 +1215,7 @@ class MeetEntryController extends Controller {
             array_push($events, $eventItem);
         }
 
-        $emailAddress = $emails->last()->address;
+        $emailAddress = trim($emails->last()->address);
 
         $memberDisplayName = $entry->member->firstname . ' ' . $entry->member->surname;
         $entrantName = $memberDisplayName;
@@ -1241,12 +1251,12 @@ class MeetEntryController extends Controller {
                 $item = array();
                 $item['itemNumber'] = $i->merchandise->sku;
                 $item['itemName'] = $i->merchandise->item_name;
-                $item['unitPrice'] = $i->merchandise->gst;
+                $item['unitPrice'] = $i->merchandise->exgst + $i->merchandise->gst;
                 $item['qty'] = $i->qty;
-                $item['subtotal'] = $i->merchandise->gst * $i->qty;
+                $item['subtotal'] = ($i->merchandise->exgst + $i->merchandise->gst) * $i->qty;
                 array_push($items, $item);
 
-                $totalgst += ($i->merchandise->gst - $i->merchandise->exgst) * $i->qty;
+                $totalgst += $i->merchandise->gst * $i->qty;
                 $total += $item['subtotal'];
             }
         }
@@ -1310,7 +1320,7 @@ class MeetEntryController extends Controller {
     public function pendingEmail($pendingEntry) {
 
         $entryData = json_decode($pendingEntry['entrydata'], true);
-        $emailAddress = $entryData['entrantDetails']['entrantEmail'];
+        $emailAddress = trim($entryData['entrantDetails']['entrantEmail']);
         $memberDisplayName = $entryData['entrantDetails']['entrantFirstName'] . ' ' . $entryData['entrantDetails']['entrantSurname'];
         $entrantName = $entryData['entrantDetails']['entrantFirstName'] . ' ' . $entryData['entrantDetails']['entrantSurname'];
         $clubName = '';
