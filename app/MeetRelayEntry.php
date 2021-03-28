@@ -39,4 +39,12 @@ class MeetRelayEntry extends Model
         return $this->hasOne("App\MeetEvent", 'id', 'meetevent_id');
     }
 
+    public function ageGroup() {
+	    return $this->hasOne('App\AgeGroup', 'id', 'agegroup');
+    }
+
+    public function members() {
+	    return $this->hasMany('App\MeetRelayEntryMember', 'relay_team', 'id');
+    }
+
 }

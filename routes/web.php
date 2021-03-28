@@ -35,6 +35,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
 	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
 	$router->get('club/{id}/members', ['middleware' => 'auth:api', 'uses' => 'ClubController@getMembers']);
+    $router->get('club/{id}/entries', ['middleware' => 'auth:api', 'uses' => 'ClubController@getEntries']);
+
+    $router->get('club/{id}/relay_teams', ['middleware' => 'auth:api', 'uses' => 'RelayTeamController@getRelayTeams']);
 
 	$router->get('member/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMember']);
     $router->get('member_by_number/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMemberByNumber']);

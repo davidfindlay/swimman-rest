@@ -55,7 +55,11 @@ class MemberController extends Controller {
 				$club = $m->club;
 			}
 
-            $member->club_roles;
+            $club_roles = $member->club_roles;
+			foreach ($club_roles as $m) {
+                $club = $m->club;
+            }
+
             $member->meet_access;
 
 			Log::info($member);

@@ -810,11 +810,16 @@ class MeetEntryController extends Controller {
     }
 
     public function getSubmittedEntries() {
-        $entries = MeetEntry::where('member_id', '=', $this->user->member)->get();
+        $entries = MeetEntry::where('member_id', '=', $this->user->member)
+            ->orderBy('meet_id', 'DESC')
+            ->get();
 
         foreach ($entries as $e) {
             $e['meet'] = $e->meet;
-            $e['meet']->events;
+
+            if (isset($e['meet'])) {
+                $e['meet']->events;
+            }
 
             foreach ($e->events as $event) {
                 $event->event;
