@@ -8,6 +8,7 @@ use App\MeetRelayEntry;
 use App\MeetRelayEntryMember;
 use App\PasswordGenerationWord;
 use App\AgeGroup;
+use App\RelayPayment;
 use Illuminate\Http\Request;
 
 use App\Club;
@@ -40,6 +41,7 @@ class RelayTeamController extends Controller
     public function getRelayTeams($clubId) {
         $club = Club::find($clubId);
 
+
         // Is this member a club captain for this club
         if (!$this->isAdmin($clubId)) {
             return response()->json([
@@ -55,13 +57,19 @@ class RelayTeamController extends Controller
         $eventId = $this->request->get('eventId');
 
         if ($eventId != NULL) {
-            $relays = MeetRelayEntry::where('club_id', '=', intval($clubId))
+            $relays = MeetRelayEntry::with(['members' => function ($query) {
+                $query->orderBy('leg');
+            }])->where('club_id', '=', intval($clubId))
                 ->where('meetevent_id', '=', intval($eventId))->get();
         } else if ($meetId != NULL) {
-            $relays = MeetRelayEntry::where('club_id', '=', intval($clubId))
+            $relays = MeetRelayEntry::with(['members' => function ($query) {
+                $query->orderBy('leg');
+            }])->where('club_id', '=', intval($clubId))
                 ->where('meet_id', '=', intval($meetId))->get();
         } else {
-            $relays = MeetRelayEntry::where('club_id', '=', intval($clubId))->get();
+            $relays = MeetRelayEntry::with(['members' => function ($query) {
+                $query->orderBy('leg');
+            }])->where('club_id', '=', intval($clubId))->get();
         }
 
         foreach ($relays as $r) {
@@ -72,18 +80,23 @@ class RelayTeamController extends Controller
             }
         }
 
+        $payments = RelayPayment::where('meet_id', '=', intval($meetId))
+            ->where('club_id', '=', intval($clubId))->get();
+
         return response()->json([
             'success' => true,
             'club_id' => $club->id,
             'club_code' => $club->code,
             'club_name' => $club->clubname,
-            'relays' => $relays
+            'relays' => $relays,
+            'payments' => $payments
         ], 200);
 
     }
 
     // Is user club admin
-    public function isAdmin($clubId) {
+    public function isAdmin($clubId)
+    {
         $memberId = $this->user->member;
 
         if (isset($memberId)) {
@@ -105,7 +118,8 @@ class RelayTeamController extends Controller
         return false;
     }
 
-    public function createRelay() {
+    public function createRelay()
+    {
         $relay = $this->request->all();
 
         $clubId = $relay['club_id'];
@@ -191,6 +205,7 @@ class RelayTeamController extends Controller
 
         $relayTeam->seedtime = $relay['seedtime'];
         $relayTeam->cost = $relayEvent->eventfee;
+        $relayTeam->teamname = $relay['teamname'];
         $relayTeam->save();
 
         foreach ($relayTeamMembers as $rtm) {
@@ -206,8 +221,115 @@ class RelayTeamController extends Controller
         ], 200);
     }
 
+    public function editRelay($id)
+    {
+        $relay = $this->request->all();
+
+        $relayTeam = MeetRelayEntry::find($id);
+
+        $clubId = $relayTeam->club_id;
+        $club = Club::find($clubId);
+
+        // Is this member a club captain for this club
+        if (!$this->isAdmin($clubId)) {
+            return response()->json([
+                'success' => false,
+                'club_id' => $clubId,
+                'club_code' => $club->code,
+                'club_name' => $club->clubname,
+                'message' => 'You do not have permission to access this clubs\'s relay teams.'
+            ], 403);
+        }
+
+        $relayTeamMembers = array();
+        $relayEvent = MeetEvent::find($relayTeam->meetevent_id);
+        $gender = $relayEvent->eventType->gender;
+
+        $ageGroup = NULL;
+
+        // Remove existing relay team members
+        foreach ($relayTeam->members as $m) {
+            MeetRelayEntryMember::destroy($m->id);
+        }
+
+        // Does the relay have 4 members?
+        if (count($relay['members']) == 4) {
+
+            $ageTotal = 0;
+
+            foreach ($relay['members'] as $relayMember) {
+                $rm = new MeetRelayEntryMember();
+                $rm->member_id = $relayMember['member_id'];
+                $rm->leg = $relayMember['leg'];
+
+                $member = Member::find($rm->member_id);
+
+                $todayDt = new DateTime();
+                $lastDay = $todayDt->format('y') . '-12-31';
+
+                $dobDT = new DateTime($member->dob);
+                $testDateDT = new DateTime($lastDay);
+
+                $ageInt = $dobDT->diff($testDateDT);
+                $age = $ageInt->format('%y');
+                $ageTotal += $age;
+
+                array_push($relayTeamMembers, $rm);
+
+            }
+
+            $ageGroup = AgeGroup::where('min', '<=', $ageTotal)
+                ->where('max', '>=', $ageTotal)
+                ->where('swimmers', '=', 4)
+                ->where('gender', '=', $gender)
+                ->where('age_groups.set', '=', 1)
+                ->first();
+
+        } else {
+            $ageGroup = AgeGroup::where('min', '=', $relay['agegroup_min'])
+                ->where('swimmers', '=', 4)
+                ->where('gender', '=', $gender)
+                ->where('age_groups.set', '=', 1)
+                ->first();
+
+        }
+
+        $relayTeam->agegroup = $ageGroup->id;
+
+        $existingTeams = MeetRelayEntry::where('club_id', '=', $relayTeam->club_id)
+            ->where('meetevent_id', '=', $relayTeam->meetevent_id)
+            ->where('agegroup', '=', $relayTeam->agegroup)
+            ->orderBy('letter', 'ASC')
+            ->get();
+
+        if ($relay['letter'] != '') {
+            $relayTeam->letter = $relay['letter'];
+        } else {
+            $relayTeam->letter = $this->getNextLetter($existingTeams);
+        }
+
+        $relayTeam->seedtime = $relay['seedtime'];
+        $relayTeam->cost = $relayEvent->eventfee;
+        $relayTeam->teamname = $relay['teamname'];
+        $relayTeam->save();
+
+        foreach ($relayTeamMembers as $rtm) {
+            $rtm->relay_team = $relayTeam->id;
+            $rtm->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'ageGroup' => $ageGroup,
+            'relayTeam' => $relayTeam,
+            'relay' => $relay
+        ], 200);
+
+    }
+
     // Get Next letter
-    public function getNextLetter($relayTeams) {
+    public function getNextLetter($relayTeams)
+    {
 
         $letter = '';
 
@@ -215,7 +337,7 @@ class RelayTeamController extends Controller
         $letterAvailable = false;
         $curLetter = $firstLetter;
 
-        while($letterAvailable != true) {
+        while ($letterAvailable != true) {
 
             $letter = chr($curLetter);
 
@@ -224,10 +346,10 @@ class RelayTeamController extends Controller
                 $letterAvailable = true;
             }
 
-            if ($this->checkLetter($relayTeams, $letter) === false) {
-                $curLetter++;
-            } else {
+            if ($this->checkLetter($relayTeams, $letter)) {
                 $letterAvailable = true;
+            } else {
+                $curLetter++;
             }
 
         }
@@ -236,14 +358,48 @@ class RelayTeamController extends Controller
 
     }
 
-    public function checkLetter($relayTeams, $letter) {
+    public function checkLetter($relayTeams, $letter)
+    {
         foreach ($relayTeams as $r) {
             if ($r->letter === $letter) {
-                return true;
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
+    public function deleteRelay($id)
+    {
+        $relay = MeetRelayEntry::find($id);
+
+        $clubId = $relay->club_id;
+        $club = Club::find($clubId);
+
+        // Is this member a club captain for this club
+        if (!$this->isAdmin($clubId)) {
+            return response()->json([
+                'success' => false,
+                'club_id' => $clubId,
+                'club_code' => $club->code,
+                'club_name' => $club->clubname,
+                'message' => 'You do not have permission to access this clubs\'s relay teams.'
+            ], 403);
+        }
+
+        $rt = MeetRelayEntry::find($relay['id']);
+        foreach ($rt->members as $m) {
+            MeetRelayEntryMember::destroy($m->id);
+        }
+
+        MeetRelayEntry::destroy($relay['id']);
+
+        return response()->json([
+            'success' => true,
+            'club_id' => $clubId,
+            'club_code' => $club->code,
+            'club_name' => $club->clubname,
+            'message' => 'Deleted relay ' . $relay['id'] . '.'
+        ], 200);
+    }
 }

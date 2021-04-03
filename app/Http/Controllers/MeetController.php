@@ -93,6 +93,15 @@ class MeetController extends Controller {
 	{
 
 		$meetDetails = Meet::find($id);
+
+		if ($meetDetails == null) {
+            return response()->json([
+                'success' => false,
+                'meet_id' => $id,
+                'message' => 'Meet not found.'
+            ], 404);
+        }
+
 		$meetEvents = $meetDetails->events;
 
 		foreach ($meetEvents as $m) {
