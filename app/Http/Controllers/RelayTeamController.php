@@ -8,6 +8,7 @@ use App\MeetRelayEntry;
 use App\MeetRelayEntryMember;
 use App\PasswordGenerationWord;
 use App\AgeGroup;
+use App\PayPalPayment;
 use App\RelayPayment;
 use Illuminate\Http\Request;
 
@@ -400,6 +401,67 @@ class RelayTeamController extends Controller
             'club_code' => $club->code,
             'club_name' => $club->clubname,
             'message' => 'Deleted relay ' . $relay['id'] . '.'
+        ], 200);
+    }
+
+    public function receivePayment($club_id, $meet_id) {
+
+        $paymentDetails = $this->request->all();
+
+        $club = Club::find($club_id);
+
+        // Is this member a club captain for this club
+        if (!$this->isAdmin($club_id)) {
+            return response()->json([
+                'success' => false,
+                'club_id' => $club_id,
+                'club_code' => $club->code,
+                'club_name' => $club->clubname,
+                'message' => 'You do not have permission to access this clubs\'s relay teams.'
+            ], 403);
+        }
+
+        $relayPayment = new RelayPayment();
+        $relayPayment->club_id = $club_id;
+        $relayPayment->meet_id = $meet_id;
+
+        $purchaseUnits = $paymentDetails['purchase_units'];
+        if (count($purchaseUnits) > 0) {
+            $purchaseUnit = $purchaseUnits[0];
+            $items = $purchaseUnit['items'];
+            if (count($items) > 0) {
+                $item = $items[0];
+                $qty = intval($item['quantity']);
+            }
+
+            $amount = $purchaseUnit['amount'];
+            $amountPaid = floatval($amount['value']);
+        }
+
+        $relayPayment->qty = $qty;
+        $relayPayment->amount = $amountPaid;
+        $relayPayment->method = 1;
+        $relayPayment->datetime = date("Y-m-d H:i:s");
+
+        $relayPayment->save();
+
+        $paypalPayment = new PayPalPayment();
+        $paypalPayment->invoice_id = $relayPayment['id'];
+
+        $payer = $relayPayment['payer'];
+        $paypalPayment->payer_name = $payer['given_name'] . ' ' . $payer['surname'];
+        $paypalPayment->payer_email = $payer['email_address'];
+        $paypalPayment->paid = $amountPaid;
+        $paypalPayment->save();
+
+        return response()->json([
+            'success' => true,
+            'club_id' => $club_id,
+            'club_code' => $club->code,
+            'club_name' => $club->clubname,
+            'relay_payment' => $relayPayment,
+            'paypal_payment' => $paypalPayment,
+            'message' => 'Relay Payment received.'
         ], 200);
     }
 }

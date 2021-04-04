@@ -42,6 +42,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('relay', ['middleware' => 'auth:api', 'uses' => 'RelayTeamController@createRelay']);
     $router->put('relay/{id}', ['middleware' => 'auth:api', 'uses' => 'RelayTeamController@editRelay']);
     $router->delete('relay/{id}', ['middleware' => 'auth:api', 'uses' => 'RelayTeamController@deleteRelay']);
+    $router->post('relay_payment/{club_id}/{meet_id}', ['middleware' => 'auth:api', 'uses' => 'RelayTeamController@receivePayment']);
 
 	$router->get('member/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMember']);
     $router->get('member_by_number/{id}', ['middleware' => 'auth:api', 'uses' => 'MemberController@showOneMemberByNumber']);
