@@ -47,10 +47,10 @@ class MemberController extends Controller {
 			$emergency = $member->emergency;
 			if ($emergency != null) {
                 $emergencyContact = Phone::find($emergency->phone_id);
-            }
 
-			if ($emergencyContact != NULL) {
-			    $emergency['phonenumber'] = $emergencyContact->phonenumber;
+                if ($emergencyContact != NULL) {
+                    $emergency['phonenumber'] = $emergencyContact->phonenumber;
+                }
             }
 
 			foreach($memberships as $m) {

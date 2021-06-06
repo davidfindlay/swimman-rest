@@ -95,7 +95,7 @@ class MeetEntryController extends Controller {
             if (count($duplicateCheck) == 0) {
                 $uniqueCode = true;
             }
-            //$uniqueCode = true;
+            // $uniqueCode = true;
         }
 
         $entryObj = MeetEntryIncomplete::create($entry);
@@ -262,12 +262,16 @@ class MeetEntryController extends Controller {
                 $entry->saveOrFail();
 
                 // Send confirmation email
-                try {
-                    $this->pendingEmail($entry);
-                } catch (Exception $e) {
-                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
-                }
 
+                if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+
+                    try {
+                        $this->pendingEmail($entry);
+                    } catch (Exception $e) {
+                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    }
+
+                }
                 $entry->entrydata = json_decode($entry->entrydata, true);
 
                 return response()->json(['pending_entry' => $entry,
@@ -286,10 +290,12 @@ class MeetEntryController extends Controller {
                 $entry->saveOrFail();
 
                 // Send confirmation email
-                try {
-                    $this->pendingEmail($entry);
-                } catch (Exception $e) {
-                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+                    try {
+                        $this->pendingEmail($entry);
+                    } catch (Exception $e) {
+                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    }
                 }
 
                 $entry->entrydata = json_decode($entry->entrydata, true);
@@ -317,10 +323,12 @@ class MeetEntryController extends Controller {
                     $entry->saveOrFail();
 
                     // Send confirmation email
-                    try {
-                        $this->pendingEmail($entry);
-                    } catch (Exception $e) {
-                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+                        try {
+                            $this->pendingEmail($entry);
+                        } catch (Exception $e) {
+                            \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                        }
                     }
 
                     $entry->entrydata = json_decode($entry->entrydata, true);
@@ -351,10 +359,12 @@ class MeetEntryController extends Controller {
                     $entry->saveOrFail();
 
                     // Send confirmation email
-                    try {
-                        $this->pendingEmail($entry);
-                    } catch (Exception $e) {
-                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+                        try {
+                            $this->pendingEmail($entry);
+                        } catch (Exception $e) {
+                            \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                        }
                     }
 
                     $entry->entrydata = json_decode($entry->entrydata, true);
@@ -415,10 +425,12 @@ class MeetEntryController extends Controller {
                 $entry->saveOrFail();
 
                 // Send confirmation email
-                try {
-                    $this->pendingEmail($entry);
-                } catch (Exception $e) {
-                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+                    try {
+                        $this->pendingEmail($entry);
+                    } catch (Exception $e) {
+                        \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                    }
                 }
 
                 $entry->entrydata = json_decode($entry->entrydata, true);
@@ -455,15 +467,18 @@ class MeetEntryController extends Controller {
 
         // Disability
         $classified = 0;
-        switch($entryData->medicalDetails->classification) {
-            case 'classified':
-                $classified = 1;
-                break;
-            case 'classification_provisional':
-                $classified = 2;
-                break;
-            default:
-                $classified = 0;
+
+        if (isset($entryData->medicalDetails)) {
+            switch ($entryData->medicalDetails->classification) {
+                case 'classified':
+                    $classified = 1;
+                    break;
+                case 'classification_provisional':
+                    $classified = 2;
+                    break;
+                default:
+                    $classified = 0;
+            }
         }
 
         // TODO add better validation here.
@@ -491,28 +506,30 @@ class MeetEntryController extends Controller {
 
         }
 
-        // Does the entrant have a medical condition that requires stroke dispensation
-        if ($entryData->medicalDetails->dispensation == "true") {
-            $meetEntry->medical_condition = 1;
-        } else {
-            $meetEntry->medical_condition = 0;
-        }
+        if (isset($entryData->medicalDetails)) {
+            // Does the entrant have a medical condition that requires stroke dispensation
+            if ($entryData->medicalDetails->dispensation == "true") {
+                $meetEntry->medical_condition = 1;
+            } else {
+                $meetEntry->medical_condition = 0;
+            }
 
-        // Does the entrant have a medical certificate for the stroke dispensation
-        if ($entryData->medicalDetails->medicalCertificate == "") {
-            $meetEntry->medical = 0;
-        } elseif ($entryData->medicalDetails->medicalCertificate == "true") {
-            $meetEntry->medical = 1;
-        }
+            // Does the entrant have a medical certificate for the stroke dispensation
+            if ($entryData->medicalDetails->medicalCertificate == "") {
+                $meetEntry->medical = 0;
+            } elseif ($entryData->medicalDetails->medicalCertificate == "true") {
+                $meetEntry->medical = 1;
+            }
 
-        // Does the entrant have a medical condition that may affect safety?
-        if ($entryData->medicalDetails->medicalCondition == "true") {
-            $meetEntry->medical_safety = 1;
-        } else {
-            $meetEntry->medical_safety = 0;
-        }
+            // Does the entrant have a medical condition that may affect safety?
+            if ($entryData->medicalDetails->medicalCondition == "true") {
+                $meetEntry->medical_safety = 1;
+            } else {
+                $meetEntry->medical_safety = 0;
+            }
 
-        $meetEntry->medical_details = $entryData->medicalDetails->medicalDetails;
+            $meetEntry->medical_details = $entryData->medicalDetails->medicalDetails;
+        }
 
         if (isset($entryData->mealMerchandiseDetails)) {
             $meetEntry->meals = $entryData->mealMerchandiseDetails->meals;
@@ -540,9 +557,14 @@ class MeetEntryController extends Controller {
         }
 
         $meetEntry->code = $entry->code;
+        $meetEntry->incomplete_entry_id = $entry->id;
         $meetEntry->saveOrFail();
         $meetEntry->refresh();
         $meetEntryId = $meetEntry->id;
+
+        $entry->meet_entry_id = $meetEntryId;
+        $entry->saveOrFail();
+        $entry->refresh();
 
         // Add events
 
@@ -636,44 +658,59 @@ class MeetEntryController extends Controller {
         $meetEntryCreated['events'] = MeetEntryEvent::where('meet_entry_id', '=', $meetEntryId);
 
         // Send confirmation email
-        try {
-            $meetEntryConfirmation = MeetEntry::find($meetEntryId);
-            $this->confirmationEmail($meetEntryConfirmation);
-        } catch (Exception $e) {
-            \Sentry\captureException($e);
-            \Sentry\captureMessage('Exception when sending confirmation email: ' . $e->getMessage());
+        if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+            try {
+                $meetEntryConfirmation = MeetEntry::find($meetEntryId);
+                $this->confirmationEmail($meetEntryConfirmation);
+            } catch (Exception $e) {
+                \Sentry\captureException($e);
+                \Sentry\captureMessage('Exception when sending confirmation email: ' . $e->getMessage());
+            }
         }
 
         // Don't
         if (! $editMode) {
-            switch ($entryData->paymentOptions->paymentOption) {
-                case 'club':
-                    // set to Pending Club Payment
-                    $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending Club Payment')->first();
-                    $entry->status_id = $pendingStatus->id;
-                    $entry->saveOrFail();
-                    $status = $pendingStatus->id;
+            if (isset($entryData->paymentOptions)) {
+                switch ($entryData->paymentOptions->paymentOption) {
+                    case 'club':
+                        // set to Pending Club Payment
+                        $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending Club Payment')->first();
+                        $entry->status_id = $pendingStatus->id;
+                        $entry->saveOrFail();
+                        $status = $pendingStatus->id;
 
-                    $meetEntryStatus = new MeetEntryStatus();
-                    $meetEntryStatus->entry_id = $meetEntryId;
-                    $meetEntryStatus->code = $pendingStatus->id;
-                    $meetEntryStatus->saveOrFail();
+                        $meetEntryStatus = new MeetEntryStatus();
+                        $meetEntryStatus->entry_id = $meetEntryId;
+                        $meetEntryStatus->code = $pendingStatus->id;
+                        $meetEntryStatus->saveOrFail();
 
-                    break;
-                case 'later':
-                case 'paypal':
-                    // set to Awaiting Payment
-                    $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Awaiting Payment')->first();
-                    $entry->status_id = $pendingStatus->id;
-                    $entry->saveOrFail();
-                    $status = $pendingStatus->id;
+                        break;
+                    case 'later':
+                    case 'paypal':
+                        // set to Awaiting Payment
+                        $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Awaiting Payment')->first();
+                        $entry->status_id = $pendingStatus->id;
+                        $entry->saveOrFail();
+                        $status = $pendingStatus->id;
 
-                    $meetEntryStatus = new MeetEntryStatus();
-                    $meetEntryStatus->entry_id = $meetEntryId;
-                    $meetEntryStatus->code = $pendingStatus->id;
-                    $meetEntryStatus->saveOrFail();
+                        $meetEntryStatus = new MeetEntryStatus();
+                        $meetEntryStatus->entry_id = $meetEntryId;
+                        $meetEntryStatus->code = $pendingStatus->id;
+                        $meetEntryStatus->saveOrFail();
 
-                    break;
+                        break;
+                }
+            } else {
+                // set to Awaiting Payment
+                $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Awaiting Payment')->first();
+                $entry->status_id = $pendingStatus->id;
+                $entry->saveOrFail();
+                $status = $pendingStatus->id;
+
+                $meetEntryStatus = new MeetEntryStatus();
+                $meetEntryStatus->entry_id = $meetEntryId;
+                $meetEntryStatus->code = $pendingStatus->id;
+                $meetEntryStatus->saveOrFail();
             }
         }
 
@@ -860,52 +897,57 @@ class MeetEntryController extends Controller {
             ], 403);
         }
 
-        $entries = MeetEntry::where('meet_id', '=', $meetId)->get();
+        $meet = Meet::with(['events'])->find(intval($meetId));
 
-        foreach ($entries as $entry) {
-            $entry->member;
-            $entry->member->emergency;
-            if ($entry->member->emergency != NULL) {
-                $entry->member->emergency->phone;
-            }
-            $entry->member->phones;
-            $entry->member->emails;
-            $entry->member->memberships;
+        $entries = MeetEntry::with(['member', 'events', 'club', 'age_group', 'payments', 'disability_s',
+            'disability_sb', 'disability_sm'])
+            ->where('meet_id', '=', $meetId)->get();
 
-            $status = MeetEntryStatus::where('entry_id', '=', $entry->id)
-                ->orderBy('id', 'DESC')
-                ->first();
-            if ($status != NULL) {
-                $status->status;
-                $entry['status'] = $status;
-            }
-
-            if ($entry->disability_s_id != NULL) {
-                $entry->disability_s;
-            }
-            if ($entry->disability_sb_id != NULL) {
-                $entry->disability_sb;
-            }
-            if ($entry->disability_sm_id != NULL) {
-                $entry->disability_sm;
-            }
-
-            if ($entry->club_id !== NULL) {
-                $entry->club;
-            }
-
-            $entry->age_group;
-            $entry->meet;
-            $entry->events;
-            $entry->payments;
-
-            foreach($entry->events as $e) {
-                $e->event;
-            }
-        }
+//        foreach ($entries as $entry) {
+//            $entry->member;
+//            $entry->member->emergency;
+//            if ($entry->member->emergency != NULL) {
+//                $entry->member->emergency->phone;
+//            }
+//            $entry->member->phones;
+//            $entry->member->emails;
+//            $entry->member->memberships;
+//
+//            $status = MeetEntryStatus::where('entry_id', '=', $entry->id)
+//                ->orderBy('id', 'DESC')
+//                ->first();
+//            if ($status != NULL) {
+//                $status->status;
+//                $entry['status'] = $status;
+//            }
+//
+////            if ($entry->disability_s_id != NULL) {
+////                $entry->disability_s;
+////            }
+////            if ($entry->disability_sb_id != NULL) {
+////                $entry->disability_sb;
+////            }
+////            if ($entry->disability_sm_id != NULL) {
+////                $entry->disability_sm;
+////            }
+//
+////            if ($entry->club_id !== NULL) {
+////                $entry->club;
+////            }
+//
+////            $entry->age_group;
+//            //  $entry->meet;
+////            $entry->events;
+////            $entry->payments;
+//
+////            foreach($entry->events as $e) {
+//////                $e->event;
+////            }
+//        }
 
         return response()->json(['success' => true,
-            'meet_id' => $meetId,
+            'meet_id' => intval($meetId),
+            'meet' => $meet,
             'meet_entries' => $entries]);
     }
 
@@ -914,7 +956,7 @@ class MeetEntryController extends Controller {
         if (!$this->isAuthorised($meetId)) {
             return response()->json([
                 'error' => 'You must be a meet organiser for this meet or an admin to access pending entries to this meet',
-                'meetId' => $meetId,
+                'meetId' => intval($meetId),
                 'user' => $this->request->user()
             ], 403);
         }

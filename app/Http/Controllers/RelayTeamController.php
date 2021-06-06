@@ -464,4 +464,12 @@ class RelayTeamController extends Controller
             'message' => 'Relay Payment received.'
         ], 200);
     }
+
+    public function receiveGuestPayment($meetId) {
+        return response()->json([
+            'success' => true,
+            'paypal_payment' => null,
+            'message' => 'Guest Relay Payment received.'
+        ], 200);
+    }
 }

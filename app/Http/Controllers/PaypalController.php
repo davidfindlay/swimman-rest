@@ -140,7 +140,7 @@ class PaypalController extends Controller {
 //        $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/enter/" . $meetId . "/confirmation?paypalsuccess=true")
 //                ->setCancelUrl(env('SITE_BASE', '') . "/enter/" . $meetId . "/confirmation?paypalsuccess=false");
         $redirectUrls->setReturnUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=true&meet_entry=" . $entryCode)
-            ->setCancelUrl(env('SITE_BASE', '') . "/paypal-landing/paypalsuccess=false&meet_entry=" . $entryCode);
+            ->setCancelUrl(env('SITE_BASE', '') . "/paypal-landing?paypalsuccess=false&meet_entry=" . $entryCode);
 
 
         $payment = new Payment();

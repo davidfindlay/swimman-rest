@@ -23,7 +23,10 @@ class MeetEntryEvent extends Model
 		'leg',
         'seedtime',
         'cost',
-        'paid'
+        'paid',
+        'cancelled',
+        'scratched',
+        'status_code'
 	];
 
 	public function meet_entry() {
@@ -40,6 +43,10 @@ class MeetEntryEvent extends Model
 
     public function relay() {
         return $this->hasOne("App\RelayEntry", 'id', 'relay_id');
+    }
+
+    public function status() {
+        return $this->hasOne("App\MeetEntryStatusCode", 'id', 'status_code');
     }
 
 }

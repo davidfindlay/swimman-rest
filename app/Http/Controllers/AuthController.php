@@ -40,6 +40,10 @@ class AuthController extends Controller
     {
         $credentials = $request->only(['username', 'password']);
 
+        if ($request->input('keepmeloggedin')) {
+            $this->guard()->factory()->setTTL(60*24*365);
+        }
+
         if (!$token = $this->guard()->attempt($credentials)) {
 
             if (!$this->importJUser($credentials)) {
