@@ -1398,7 +1398,15 @@ class MeetEntryController extends Controller {
         return $totalPayments;
     }
 
-    public function paymentEmailMeetEntry($entry) {
+    public function paymentEmailMeetEntry($id) {
+
+        $entry = MeetEntry::find($id);
+
+        if ($entry == NULL) {
+            return response()->json(['success' => false,
+                'message' => 'Meet entry not found.'], 404);
+        }
+
         $meet = $entry->meet;
         $meetName = $meet->meetname;
         $emails = $entry->member->emails;
