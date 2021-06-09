@@ -1313,7 +1313,10 @@ class MeetEntryController extends Controller {
             $clubName = $club->clubname . ' (' . $club->code . ')';
         }
 
+        $viewEntry = env('SITE_BASE') . '/entry-confirmation/' . $entry->code;
+
         $data = array('entry' => $entry,
+            'viewEntry' => $viewEntry,
             'meetname' => $meetName,
             'entrantName' => $entrantName,
             'clubName' => $clubName,
@@ -1338,6 +1341,84 @@ class MeetEntryController extends Controller {
         $entryEmail->save();
 
         return $emailAddress;
+    }
+
+    public function applyPayment($id) {
+        if ($this->user->is_admin != 1) {
+            return response()->json(['success' => false,
+                'message' => 'You do not have permission to view Meet Entries.'], 403);
+        }
+
+        $entry = MeetEntry::find($id);
+        if ($entry == NULL) {
+            return response()->json(['success' => false,
+                'message' => 'Unable to find this entry.'], 404);
+        }
+
+        $payment = new MeetEntryPayment();
+        $payment->entry_id = $id;
+        $payment->member_id = $entry->member_id;
+        $payment->received = $this->request->input('received');
+        $payment->method = $this->request->input('method');
+        $payment->comment = $this->request->input('comment');
+        $payment->amount = $this->request->input('amount');
+
+        try {
+            $payment->saveOrFail();
+
+            if ($this->totalEntryPayments($id) >= $entry->cost) {
+                // Set status to Accepted
+                $acceptedStatus = MeetEntryStatusCode::where('label', '=', 'Accepted')->first();
+
+                $meetEntryStatus = new MeetEntryStatus();
+                $meetEntryStatus->entry_id = $id;
+                $meetEntryStatus->code = $acceptedStatus->id;
+                $meetEntryStatus->saveOrFail();
+            }
+
+        } catch (Exception $e) {
+            \Sentry\captureException($e);
+            \Sentry\captureMessage('Exception when applying payment: ' . $e->getMessage());
+
+            return response()->json(['success' => false,
+                'message' => 'Unable to apply payment for entry id ' . $id . ': ' . $e->getMessage()], 400);
+        }
+    }
+
+    public function totalEntryPayments($entryId) {
+        $totalPayments = 0;
+
+        $entry = MeetEntry::find($entryId);
+        $payments = $entry->payments;
+
+        foreach ($payments as $p) {
+            $totalPayments += $p->amount;
+        }
+        
+        return $totalPayments;
+    }
+
+    public function paymentEmailMeetEntry($entry) {
+        $meet = $entry->meet;
+        $meetName = $meet->meetname;
+        $emails = $entry->member->emails;
+        $emailAddress = trim($emails->last()->address);
+
+        $memberDisplayName = $entry->member->firstname . ' ' . $entry->member->surname;
+        $entrantName = $memberDisplayName;
+
+        $viewEntry = env('SITE_BASE') . '/entry-confirmation/' . $entry->code;
+        $payEntry = env('SITE_BASE') . '/entry-confirmation/' . $entry->code . '?pay=paypal';
+
+        $data = array('entry' => $entry,
+            'viewEntry' => $viewEntry,
+            'payEntry' => $payEntry,
+            'meetname' => $meetName );
+
+        Mail::send('entryconfirmation', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
+            $message->to($emailAddress, $memberDisplayName)->subject('Make a Payment - ' . $meetName);
+            $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
+        });
     }
 
     public function sendPendingConfirmationEmail($id) {

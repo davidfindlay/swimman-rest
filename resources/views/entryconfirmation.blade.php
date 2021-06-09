@@ -1,4 +1,7 @@
-Thank you for registering for the {{$meetname}}.
+<p>Thank you for registering for the {{$meetname}}.</p>
+
+<p>Here is a link to <a href="{{$viewEntry}}">view this entry in MSQ Quick Entry</a>. If you have not yet paid, you
+can pay at the bottom of the page by clicking Pay Now.</p>
 
 <table border="0">
     <tr>
