@@ -1041,6 +1041,8 @@ class MeetEntryController extends Controller {
         $entry->events;
         $entry->payments;
 
+        $entry->emails;
+
         foreach($entry->events as $e) {
             $e->event;
         }
@@ -1398,14 +1400,30 @@ class MeetEntryController extends Controller {
         return $totalPayments;
     }
 
-    public function paymentEmailMeetEntry($id) {
-
+    public function sendPaymentEmailMeetEntry($id) {
+        $entryId = intval($id);
         $entry = MeetEntry::find($id);
 
         if ($entry == NULL) {
             return response()->json(['success' => false,
                 'message' => 'Meet entry not found.'], 404);
         }
+
+        try {
+            $emailAddress = $this->paymentEmailMeetEntry($entry);
+            return response()->json([
+                'success' => true,
+                'message' => 'Meet entry payment link email sent to ' . $emailAddress . '.'
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false,
+                'message' => 'Unable to send payment link email for entry id ' . $entryId . ': ' . $e->getMessage()], 400);
+        }
+
+        return $emailAddress;
+    }
+
+    public function paymentEmailMeetEntry($entry) {
 
         $meet = $entry->meet;
         $meetName = $meet->meetname;
@@ -1423,7 +1441,7 @@ class MeetEntryController extends Controller {
             'payEntry' => $payEntry,
             'meetname' => $meetName );
 
-        Mail::send('entryconfirmation', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
+        Mail::send('meetentrypayment', $data, function ($message) use ($meetName, $emailAddress, $memberDisplayName) {
             $message->to($emailAddress, $memberDisplayName)->subject('Make a Payment - ' . $meetName);
             $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
         });
