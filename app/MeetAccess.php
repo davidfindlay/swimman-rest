@@ -27,6 +27,10 @@ class MeetAccess extends Model
 	 */
 	protected $hidden = [];
 
+    protected $with = [
+        'member'
+    ];
+
 	// Existing table, no timestamps
 	public $timestamps = false;
 

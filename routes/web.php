@@ -30,8 +30,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
 	$router->get('meets/{id}/events', ['uses' => 'MeetController@getEvents']);
+    $router->post('meets/{id}/events/{eventId}/configure', ['uses' => 'MeetController@updateEvent']);
 	$router->post('meets', ['middleware' => 'auth:api', 'uses' => 'MeetController@createMeet']);
-    $router->put('meets/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@updateMeet']);
+	$router->put('meets/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@updateMeet']);
+    $router->post('meets_publish/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@publishMeet']);
+    $router->post('meets_payment_method/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@addPaymentMethod']);
+    $router->post('meets_payment_method_remove/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@removePaymentMethod']);
 
 	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
 	$router->get('club/{id}/members', ['middleware' => 'auth:api', 'uses' => 'ClubController@getMembers']);

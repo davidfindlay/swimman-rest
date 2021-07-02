@@ -8,9 +8,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Email;
 use App\Meet;
 use App\MeetEvent;
 
+use App\MeetPaymentMethod;
 use Illuminate\Http\Request;
 
 class MeetController extends Controller {
@@ -111,6 +113,14 @@ class MeetController extends Controller {
 
 		$meetEventGroups = $meetDetails->groups;
 
+		// TODO: only supply this is admin user accessing
+        if ($this->user->is_admin) {
+            $access = $meetDetails->access;
+            foreach ($access as $a) {
+                $member = $a->member();
+            }
+        }
+
 		$email = $meetDetails->email;
 		$phone = $meetDetails->phone;
 		if (isset($email)) {
@@ -139,13 +149,12 @@ class MeetController extends Controller {
             $m->images;
         }
 
-
 		return response()->json($meetDetails);
 	}
 
 	public function getAllMeets()
     {
-        $meets = Meet::all();
+        $meets = Meet::orderBy('startdate', 'asc')->get();
         return response()->json($meets);
     }
 
@@ -161,10 +170,33 @@ class MeetController extends Controller {
 
 	private function getMeetFromArray($meet, $m) {
         $meet->meetname = $m['meetname'];
-        $meet->startdate = $m['startdate'];
+
+        if (strpos($m['startdate'], '/') !== false) {
+            $dateObj = DateTime::createFromFormat('d/m/Y', $m['startdate']);
+            $meet->startdate = $dateObj->format('Y-m-d');
+
+        } else {
+            $meet->startdate = $m['startdate'];
+        }
+
+        $meet->location = 'TBA';
 
         if (array_key_exists('enddate', $m)) {
-            $meet->enddate = $m['enddate'];
+            if (strpos($m['enddate'], '/') !== false) {
+                $dateObj = DateTime::createFromFormat('d/m/Y', $m['enddate']);
+                $meet->enddate = $dateObj->format('Y-m-d');
+            } else {
+                $meet->enddate = $m['enddate'];
+            }
+        }
+
+        if (array_key_exists('deadline', $m)) {
+            if (strpos($m['deadline'], '/') !== false) {
+                $dateObj = DateTime::createFromFormat('d/m/Y', $m['deadline']);
+                $meet->deadline = $dateObj->format('Y-m-d');
+            } else {
+                $meet->deadline = $m['deadline'];
+            }
         }
 
         if (array_key_exists('contactname', $m)) {
@@ -172,7 +204,19 @@ class MeetController extends Controller {
         }
 
         if (array_key_exists('contactemail', $m)) {
-            $meet->contactemail = $m['contactemail'];
+
+            $email = Email::where('address', '=', $m['contactemail'])->first();
+            if ($email != NULL) {
+                $meet->contactemail = $email->id;
+            } else {
+                $email = new Email();
+                $email->email_type = 1;
+                $email->address = $m['contactemail'];
+                $email->saveOrFail();
+                $meet->contactemail = $email->id;
+            }
+
+
         }
 
         if (array_key_exists('meetfee', $m)) {
@@ -279,6 +323,162 @@ class MeetController extends Controller {
         return response()->json([
             'success' => true,
             'meet' => $meet], 200);
+
+    }
+
+    public function publishMeet($id) {
+        $meet = Meet::find($id);
+        $m = $this->request->all();
+
+        if (!$this->user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit a meet!'
+            ], 403);
+        }
+
+        if ($meet == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet not found!'
+            ], 403);
+        }
+
+        if (array_key_exists('publish', $m)) {
+            if ($m['publish']) {
+                $meet->status = 1;
+            } else {
+                $meet->status = 0;
+            }
+        }
+
+        $meet->save();
+
+        return response()->json([
+            'success' => true,
+            'meet' => $meet], 200);
+    }
+
+    public function addPaymentMethod($id) {
+
+        $meet = Meet::find($id);
+        $m = $this->request->all();
+
+        if (!$this->user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit a meet!'
+            ], 403);
+        }
+
+        if ($meet == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet not found!'
+            ], 403);
+        }
+
+        $paymentMethod = new MeetPaymentMethod();
+        $paymentMethod->meet_id = $id;
+        $paymentMethod->payment_type_id = $m['paymentMethodId'];
+        $paymentMethod->required = false;
+        $paymentMethod->saveOrFail();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Added payment method',
+            'meet' => $meet], 200);
+
+    }
+
+    public function removePaymentMethod($id) {
+
+        $meet = Meet::find($id);
+        $m = $this->request->all();
+
+        if (!$this->user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit a meet!'
+            ], 403);
+        }
+
+        if ($meet == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet not found!'
+            ], 404);
+        }
+
+        $paymentMethod = MeetPaymentMethod::where([
+            ['meet_id', '=', intval($id)],
+            ['payment_type_id', '=', $m['removePaymentMethod']]
+            ])->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Removed payment method',
+            'meet' => $meet], 200);
+
+    }
+
+    public function updateEvent($id, $eventId) {
+        $meet = Meet::find($id);
+        $m = $this->request->all();
+
+        if (!$this->user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit a meet!'
+            ], 403);
+        }
+
+        if ($meet == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet not found!'
+            ], 404);
+        }
+
+        $meetEvent = MeetEvent::find($eventId);
+
+        if ($meetEvent == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet event not found!'
+            ], 404);
+        }
+
+        if ($m['eventName'] != '') {
+            $meetEvent->eventname = $m['eventName'];
+        } else {
+            $meetEvent->eventname = null;
+        }
+
+        if ($m['deadline'] != '') {
+            $meetEvent->deadline = $m['deadline'];
+        } else {
+            $meetEvent->deadline = null;
+        }
+
+        if ($m['fee'] != '') {
+            $meetEvent->eventfee = $m['fee'];
+        } else {
+            $meetEvent->eventfee = null;
+        }
+
+        if ($m['disallowNT'] != '') {
+            $meetEvent->times_required = $m['disallowNT'];
+        } else {
+            $meetEvent->times_required = false;
+        }
+
+        $meetEvent->saveOrFail();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated Meet Event',
+            'meetEvent' => $meetEvent], 200);
 
     }
 

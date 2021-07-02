@@ -900,7 +900,11 @@ class MeetEntryController extends Controller {
         $meet = Meet::with(['events'])->find(intval($meetId));
 
         $entries = MeetEntry::with(['member', 'events', 'club', 'age_group', 'payments', 'disability_s',
-            'disability_sb', 'disability_sm'])
+            'disability_sb', 'disability_sm',
+            'member',
+            'member.phones',
+            'member.emails',
+            'member.memberships'])
             ->where('meet_id', '=', $meetId)->get();
 
 //        foreach ($entries as $entry) {

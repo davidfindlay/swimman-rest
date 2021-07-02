@@ -79,4 +79,8 @@ class Meet extends Model
 	    return $this->hasMany('App\MeetMerchandise');
     }
 
+    public function access() {
+	    return $this->hasMany('App\MeetAccess');
+    }
+
 }
