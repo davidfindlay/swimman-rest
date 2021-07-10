@@ -30,6 +30,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
 	$router->post('meets/{id}/access', ['middleware' => 'auth:api', 'uses' => 'MeetController@addAccess']);
+    $router->delete('meets/{id}/access/{memberId}', ['middleware' => 'auth:api', 'uses' => 'MeetController@removeAccess']);
 	$router->get('meets/{id}/events', ['middleware' => 'auth:api', 'uses' => 'MeetController@getEvents']);
     $router->post('meets/{id}/events/{eventId}/configure', ['middleware' => 'auth:api', 'uses' => 'MeetController@updateEvent']);
 	$router->post('meets', ['middleware' => 'auth:api', 'uses' => 'MeetController@createMeet']);

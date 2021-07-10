@@ -522,4 +522,41 @@ class MeetController extends Controller {
 
     }
 
+    public function removeAccess($id, $memberId)
+    {
+        $meet = Meet::find($id);
+        $m = $this->request->all();
+
+        if (!$this->user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit a meet!'
+            ], 403);
+        }
+
+        if ($meet == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet not found!'
+            ], 404);
+        }
+
+        try {
+            MeetAccess::where([
+                ['meet_id', '=', intval($id)],
+                ['member_id', '=', $memberId]
+            ])->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Meet Access updated.'
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json(['success' => false,
+                'message' => 'Unable to remove meet access : ' . $e->getMessage()], 400);
+        }
+
+    }
+
 }
