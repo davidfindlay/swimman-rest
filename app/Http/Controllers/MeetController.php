@@ -114,7 +114,7 @@ class MeetController extends Controller {
 		$meetEventGroups = $meetDetails->groups;
 
 		// TODO: only supply this is admin user accessing
-        if ($this->user->is_admin) {
+        if ($this->user && $this->user->is_admin) {
             $access = $meetDetails->access;
             foreach ($access as $a) {
                 $member = $a->member();

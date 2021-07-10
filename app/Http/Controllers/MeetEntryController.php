@@ -1423,8 +1423,6 @@ class MeetEntryController extends Controller {
             return response()->json(['success' => false,
                 'message' => 'Unable to send payment link email for entry id ' . $entryId . ': ' . $e->getMessage()], 400);
         }
-
-        return $emailAddress;
     }
 
     public function paymentEmailMeetEntry($entry) {
@@ -1449,6 +1447,8 @@ class MeetEntryController extends Controller {
             $message->to($emailAddress, $memberDisplayName)->subject('Make a Payment - ' . $meetName);
             $message->from('recorder@mastersswimmingqld.org.au', 'MSQ Quick Entry');
         });
+
+        return $emailAddress;
     }
 
     public function sendPendingConfirmationEmail($id) {

@@ -19,6 +19,7 @@ use App\MembershipType;
 use App\MembershipStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use DB;
 
 class MemberController extends Controller {
 
@@ -265,6 +266,32 @@ class MemberController extends Controller {
             $string = join($delimiter, $newwords);
         }
         return $string;
+    }
+
+    public function findMember() {
+        $user = $this->request->user();
+
+        if (!$user->is_admin) {
+            return response()->json([
+                'error' => 'Forbidden to search members.',
+                'user' => $user
+            ], 403);
+        }
+
+        $term = '%' . trim($this->request['term']) . '%';
+
+//        $results = DB::select("SELECT t.* FROM member t WHERE number LIKE '%:term%' OR CONCAT(surname, ' ', firstname) LIKE '%:term%' OR CONCAT(firstname, ' ', surname) LIKE '%:term%';", ['term' => trim($term)]);
+
+        $results = Member::whereRaw('number LIKE ? OR CONCAT(surname, \' \', firstname) LIKE ? OR CONCAT(firstname,  \' \', surname) LIKE ?',
+            array($term, $term, $term))
+            ->with(['memberships'])
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'term' => $term,
+            'results' => $results
+        ], 200);
     }
 
 }

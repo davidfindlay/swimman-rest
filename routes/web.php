@@ -104,4 +104,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->get('meet_entry_orders/{meetId}', ['middleware' => 'auth:api', 'uses' => 'MeetMerchandiseController@getOrders']);
 
+    $router->post('members/search', ['middleware' => 'auth:api', 'uses' => 'MemberController@findMember']);
+
 });
