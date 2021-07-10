@@ -29,8 +29,9 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
-	$router->get('meets/{id}/events', ['uses' => 'MeetController@getEvents']);
-    $router->post('meets/{id}/events/{eventId}/configure', ['uses' => 'MeetController@updateEvent']);
+	$router->post('meets/{id}/access', ['middleware' => 'auth:api', 'uses' => 'MeetController@addAccess']);
+	$router->get('meets/{id}/events', ['middleware' => 'auth:api', 'uses' => 'MeetController@getEvents']);
+    $router->post('meets/{id}/events/{eventId}/configure', ['middleware' => 'auth:api', 'uses' => 'MeetController@updateEvent']);
 	$router->post('meets', ['middleware' => 'auth:api', 'uses' => 'MeetController@createMeet']);
 	$router->put('meets/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@updateMeet']);
     $router->post('meets_publish/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@publishMeet']);

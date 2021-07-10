@@ -10,10 +10,12 @@ namespace App\Http\Controllers;
 
 use App\Email;
 use App\Meet;
+use App\MeetAccess;
 use App\MeetEvent;
 
 use App\MeetPaymentMethod;
 use Illuminate\Http\Request;
+use mysql_xdevapi\Exception;
 
 class MeetController extends Controller {
 
@@ -479,6 +481,44 @@ class MeetController extends Controller {
             'success' => true,
             'message' => 'Updated Meet Event',
             'meetEvent' => $meetEvent], 200);
+
+    }
+
+    public function addAccess($id) {
+        $meet = Meet::find($id);
+        $m = $this->request->all();
+
+        if (!$this->user->is_admin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to edit a meet!'
+            ], 403);
+        }
+
+        if ($meet == NULL) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Meet not found!'
+            ], 404);
+        }
+
+        $memberId = $m['memberId'];
+
+        $access = new MeetAccess();
+        $access->meet_id = $meet->id;
+        $access->member_id = $memberId;
+
+        try {
+            $access->saveOrFail();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Meet Access updated.',
+                'meetAccess' => $access], 200);
+        } catch (Exception $e) {
+                return response()->json(['success' => false,
+                    'message' => 'Unable to add meet access : ' . $e->getMessage()], 400);
+        }
 
     }
 
