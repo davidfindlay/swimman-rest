@@ -152,8 +152,25 @@ class UserController extends Controller
     }
 
     public function linkMember($memberNumber) {
-        $userDetails = $this->user;
 
+        // If user is an admin, then they are taken to be linking a member to a user, and the user id must be provided
+        if ($this->isAdmin()) {
+            $requestDetails = $this->request->all();
+
+            if (array_key_exists('userId', $requestDetails)) {
+                $userDetails = User::find($requestDetails['userId']);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User id not provided.'
+                ], 400);
+            }
+
+        } else {
+            $userDetails = $this->user;
+        }
+
+        // Is the user already linked? If so they must first be unlinked.
         if ($userDetails->member != NULL) {
             return response()->json([
                 'success' => false,
@@ -161,40 +178,88 @@ class UserController extends Controller
             ], 400);
         }
 
+        // Get member by member number
         $matchingUser = Member::where('number', '=', $memberNumber)->first();
 
-        if ($userDetails->surname == $matchingUser->surname &&
-            $userDetails->dob == $matchingUser->dob) {
-            $user = User::find($userDetails->id);
-            $user->member = $matchingUser->id;
+        if (!$matchingUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Member number ' . $memberNumber . ' not found!'
+            ], 400);
+        }
 
-            if ($user->gender == 'M') {
-                if ($matchingUser->gender != 1) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Unable to match user'
-                    ], 400);
+        // If not an admin, then all details must match
+        if (!$this->isAdmin()) {
+            if ($userDetails->surname == $matchingUser->surname &&
+                $userDetails->dob == $matchingUser->dob) {
+                $user = User::find($userDetails->id);
+                $user->member = $matchingUser->id;
+
+                if ($user->gender == 'M') {
+                    if ($matchingUser->gender != 1) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Unable to match user'
+                        ], 400);
+                    }
+                } elseif ($user->gender == 'F') {
+                    if ($matchingUser->gender != 2) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Unable to match user'
+                        ], 400);
+                    }
                 }
-            } elseif ($user->gender == 'F') {
-                if ($matchingUser->gender != 2) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Unable to match user'
-                    ], 400);
-                }
+
+                $user->saveOrFail();
+
+                return response()->json([
+                    'success' => true,
+                    'user' => $user
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to match user'
+                ], 400);
+            }
+        } else {
+            // Admin users can match any user to any member id
+            $userDetails->member = $matchingUser->id;
+            $userDetails->saveOrFail();
+
+            return response()->json([
+                'success' => true,
+                'user' => $userDetails
+            ]);
+        }
+    }
+
+    public function unlinkMember($userId) {
+        // If user is an admin, they can unlink
+        if ($this->isAdmin()) {
+            $user = User::find(intval($userId));
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User ' . $userId . ' not found!'
+                ], 404);
             }
 
+            $user->member = NULL;
+            
             $user->saveOrFail();
-
             return response()->json([
                 'success' => true,
                 'user' => $user
             ]);
+
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Unable to match user'
-            ], 400);
+                'message' => 'You are not authorised to unlink this user!'
+            ], 403);
         }
     }
 }

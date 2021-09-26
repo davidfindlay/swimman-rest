@@ -14,8 +14,8 @@ class AddActiveAndLastLoginToUsers extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('last_login');
-            $table->timestamp('last_active');
+            $table->timestamp('last_login')->nullable();
+            $table->timestamp('last_active')->nullable();
         });
     }
 

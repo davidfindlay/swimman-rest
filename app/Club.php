@@ -35,6 +35,18 @@ class Club extends Model
 	protected $hidden = [];
 
 	// Existing table, no timestamps
-	public $timestamps = false;
+    public $timestamps = false;
+
+    public function memberships() {
+        return $this->hasMany('App\Membership', 'club_id', 'id');
+    }
+
+    public function roles() {
+        return $this->hasMany('App\ClubRole', 'club_id', 'id');
+    }
+
+    public function branchRegion() {
+        return $this->hasOne('App\BranchRegion', 'id', 'region');
+    }
 
 }

@@ -24,22 +24,37 @@ use DB;
 class MemberController extends Controller {
 
 	private $request;
+    private $userId;
+    private $user;
 
 	/**
 	 * MemberController constructor.
 	 */
 	public function __construct(Request $request) {
-		$this->request = $request;
+        $this->request = $request;
+        $user = $this->request->user();
+        if ($user != NULL) {
+            $this->user = $user;
+            $this->userId = intval($user->id);
+        } else {
+            $this->userId = NULL;
+        }
 	}
 
-	public function showOneMember($id)
-	{
+	public function isAdmin() {
+	    if ($this->user && $this->user->is_admin) {
+	        return true;
+        }
+	    return false;
+    }
+
+	public function showOneMember($id) {
 
 		$user = $this->request->user();
 
 		Log::info($user->member . " - " . $id);
 
-		if ($user->member == $id) {
+		if ($user->member == $id || $this->isAdmin()) {
 
 			$member = Member::find( $id );
 			$memberships = $member->memberships;

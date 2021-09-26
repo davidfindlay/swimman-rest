@@ -35,7 +35,9 @@ class User extends Model implements JWTSubject, AuthenticatableContract, Authori
         'emergency_surname',
         'emergency_phone',
         'emergency_email',
-        'is_admin'
+        'is_admin',
+        'last_login',
+        'last_active'
     ];
 
     /**

@@ -39,9 +39,14 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('meets_payment_method/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@addPaymentMethod']);
     $router->post('meets_payment_method_remove/{id}', ['middleware' => 'auth:api', 'uses' => 'MeetController@removePaymentMethod']);
 
-	$router->get('clubs', ['uses' => 'ClubController@getClubs']);
+    $router->get('clubs', ['uses' => 'ClubController@getClubs']);
+    $router->get('clubs/all', ['middleware' => 'auth:api', 'uses' => 'ClubController@getAllClubs']);
+    $router->get('clubs/{id}', ['middleware' => 'auth:api', 'uses' => 'ClubController@getSingleClub']);
 	$router->get('club/{id}/members', ['middleware' => 'auth:api', 'uses' => 'ClubController@getMembers']);
     $router->get('club/{id}/entries', ['middleware' => 'auth:api', 'uses' => 'ClubController@getEntries']);
+    $router->put('club/{id}', ['middleware' => 'auth:api', 'uses' => 'ClubController@updateClub']);
+    $router->post('club/{id}/access', ['middleware' => 'auth:api', 'uses' => 'ClubController@addAccess']);
+    $router->delete('club/{id}/access/{memberId}', ['middleware' => 'auth:api', 'uses' => 'ClubController@removeAccess']);
 
     $router->get('club/{id}/relay_teams', ['middleware' => 'auth:api', 'uses' => 'RelayTeamController@getRelayTeams']);
 
@@ -91,6 +96,7 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->get('users/{userId}', ['middleware' => 'auth:api', 'uses' => 'UserController@getUser']);
     $router->put('users/{userId}', ['middleware' => 'auth:api', 'uses' => 'UserController@update']);
     $router->post('users/register', ['uses' => 'UserController@register']);
+    $router->post('users/{userId}/unlink', ['middleware' => 'auth:api', 'uses' => 'UserController@unlinkMember']);
     $router->post('users/link_member/{memberNumber}', ['middleware' => 'auth:api', 'uses' => 'UserController@linkMember']);
 
     $router->post('members/create', ['middleware' => 'auth:api', 'uses' => 'MemberController@createMember']);
