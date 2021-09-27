@@ -451,25 +451,31 @@ class MeetController extends Controller {
             ], 404);
         }
 
-        if ($m['eventName'] != '') {
+        if (array_key_exists('eventName', $m) && $m['eventName'] != '') {
             $meetEvent->eventname = $m['eventName'];
         } else {
             $meetEvent->eventname = null;
         }
 
-        if ($m['deadline'] != '') {
+        if (array_key_exists('deadline', $m) && $m['deadline'] != '') {
             $meetEvent->deadline = $m['deadline'];
         } else {
             $meetEvent->deadline = null;
         }
 
-        if ($m['fee'] != '') {
+        if (array_key_exists('fee', $m) && $m['fee'] != '') {
             $meetEvent->eventfee = $m['fee'];
         } else {
             $meetEvent->eventfee = null;
         }
 
-        if ($m['disallowNT'] != '') {
+        if (array_key_exists('fee_non_member', $m) && $m['fee_non_member'] != '') {
+            $meetEvent->eventfee_non_member = $m['fee_non_member'];
+        } else {
+            $meetEvent->eventfee_non_member = null;
+        }
+
+        if (array_key_exists('disallowNT', $m) && $m['disallowNT'] != '') {
             $meetEvent->times_required = $m['disallowNT'];
         } else {
             $meetEvent->times_required = false;
