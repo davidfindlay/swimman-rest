@@ -68,7 +68,7 @@ class UserController extends Controller
 
                     // If the member number has been provided, try to link the member
                     if (array_key_exists('memberNumber', $newUserDetails)) {
-                        $this->linkMember(intval($newUserDetails['memberNumber']));
+                        $this->linkMember(intval($newUserDetails['memberNumber']), $newUser);
                     }
 
                     // TODO: Try to link based on other details
@@ -170,7 +170,7 @@ class UserController extends Controller
         }
     }
 
-    public function linkMember($memberNumber) {
+    public function linkMember($memberNumber, $userDetails = NULL) {
 
         // If user is an admin, then they are taken to be linking a member to a user, and the user id must be provided
         if ($this->isAdmin()) {
@@ -186,7 +186,9 @@ class UserController extends Controller
             }
 
         } else {
-            $userDetails = $this->user;
+            if (!$userDetails) {
+                $userDetails = $this->user;
+            }
         }
 
         // Is the user already linked? If so they must first be unlinked.
