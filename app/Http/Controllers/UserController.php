@@ -60,6 +60,25 @@ class UserController extends Controller
 
             $newUser = User::create($newUserDetails);
 
+            // If the user indicates they're an MSA member try to link the member
+            if (array_key_exists('memberType', $newUserDetails)) {
+
+                // Only try to link if MSA member
+                if ($newUserDetails['memberType'] == 'msa') {
+
+                    // If the member number has been provided, try to link the member
+                    if (array_key_exists('memberNumber', $newUserDetails)) {
+                        $this->linkMember(intval($newUserDetails['memberNumber']));
+                    }
+
+                    // TODO: Try to link based on other details
+
+                }
+
+            }
+
+
+
             return response()->json([
                 'success' => true,
                 'user' => $newUser], 200);

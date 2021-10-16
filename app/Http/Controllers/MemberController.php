@@ -300,6 +300,7 @@ class MemberController extends Controller {
         $results = Member::whereRaw('number LIKE ? OR CONCAT(surname, \' \', firstname) LIKE ? OR CONCAT(firstname,  \' \', surname) LIKE ?',
             array($term, $term, $term))
             ->with(['memberships'])
+            ->with(['memberships.club'])
             ->get();
 
         return response()->json([
