@@ -7,6 +7,7 @@ use App\PasswordGenerationWord;
 use App\PasswordResetToken;
 use App\User;
 use App\Phone;
+use Carbon\Carbon;
 use mysql_xdevapi\Exception;
 use Tymon\JWTAuth\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -52,6 +53,11 @@ class AuthController extends Controller
                 $token = $this->guard()->attempt($credentials);
             }
         }
+
+        $user = Auth::user();
+        $user->last_login = Carbon::now();
+        $user->last_active = Carbon::now();
+        $user->save();
 
         return $this->respondWithToken($token);
     }
