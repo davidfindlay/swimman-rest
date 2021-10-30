@@ -22,12 +22,13 @@ class LastActiveMiddleware {
         $user = Auth::user();
 
         // If last active is later older than 1 minute then update it
-        $now = Carbon::now();
+        $now = Carbon::now('Australia/Brisbane');
         $lastActive = new Carbon($user->last_active);
         $lastPlusMinute = $lastActive->addMinute();
         if ($now > $lastPlusMinute) {
             $user->update([
-                'last_active' => $now
+                'last_active' => $now,
+                'timestamps' => false           // Don't update the updated_at timestamp
             ]);
         }
 

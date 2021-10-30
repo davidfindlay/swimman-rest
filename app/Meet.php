@@ -37,7 +37,8 @@ class Meet extends Model
         'tax_notes',
         'logged_in_only',
         'guest_ok',
-        'non_member_ok'
+        'non_member_ok',
+        'guest_relays'
 	];
 
 	/**
