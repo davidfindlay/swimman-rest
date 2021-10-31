@@ -285,6 +285,10 @@ class MeetController extends Controller {
             $meet->logged_in_only = $m['logged_in_only'];
         }
 
+        if (array_key_exists('guest_relays', $m)) {
+            $meet->guest_relays = $m['guest_relays'];
+        }
+
         return $meet;
     }
 

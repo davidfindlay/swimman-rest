@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class RelayPending extends Model
 {
 
-	protected $table = 'relays_pending';
+	protected $table = 'relay_pending';
 
 	/**
 	 * The attributes that are mass assignable.
@@ -18,8 +18,9 @@ class RelayPending extends Model
 		'meet_id',
 		'event_id',
 		'submited_by_user',
-        'entrydata',
+        'relay_data',
         'paid',
+        'paypal_payment_id',
         'status'
 	];
 
