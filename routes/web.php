@@ -116,4 +116,6 @@ $router->group(['prefix' => 'api'], function () use ($router) {
 
     $router->post('members/search', ['middleware' => 'auth:api', 'uses' => 'MemberController@findMember']);
 
+    $router->get('membership/types', ['middleware' => 'auth:api', 'uses' => 'MembershipTypeController@getMembershipTypes']);
+
 });

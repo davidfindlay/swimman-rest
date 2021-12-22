@@ -8,13 +8,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Email;
-use App\Member;
-
-use App\MemberEmails;
-use App\Phone;
-use App\Club;
-use App\Membership;
 use App\MembershipType;
 use App\MembershipStatus;
 use Illuminate\Http\Request;
@@ -42,8 +35,27 @@ class MembershipTypeController extends Controller
         }
     }
 
-    public function getMembershipTypes($id) {
+    public function isAdmin() {
+        if ($this->user && $this->user->is_admin) {
+            return true;
+        }
+        return false;
+    }
 
+    public function getMembershipTypes() {
+        if ($this->isAdmin()) {
+
+            $membershipTypes = MembershipType::all();
+
+            return response()->json([
+                'success' => true,
+                'membershipTypes' => $membershipTypes]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden to membership configuration data.'
+            ], 403);
+        }
     }
 
     public function createMembershipType() {
