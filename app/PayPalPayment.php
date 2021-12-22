@@ -22,7 +22,8 @@ class PayPalPayment extends Model
         'payer_email',
 		'paid',
         'meet_club_payment_id',
-        'meet_entries_incomplete_id'
+        'meet_entries_incomplete_id',
+        'relay_pending_id',
 	];
 
 	public function meet_entry() {

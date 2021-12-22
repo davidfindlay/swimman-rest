@@ -27,6 +27,8 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('changePassword/{userId}', ['middleware' => 'auth:api', 'uses' => 'AuthController@changePassword']);
 
 	$router->get('meets',  ['uses' => 'MeetController@showCurrentMeets']);
+    $router->get('meets/report',  ['uses' => 'MeetController@getMeetReport']);
+    $router->get('meets/entryinfo', ['uses' => 'MeetController@getMeetEntryInfo']);
     $router->get('meets/all',  ['uses' => 'MeetController@getAllMeets']);
 	$router->get('meets/{id}', ['uses' => 'MeetController@showOneMeet']);
 	$router->post('meets/{id}/access', ['middleware' => 'auth:api', 'uses' => 'MeetController@addAccess']);

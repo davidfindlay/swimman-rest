@@ -25,7 +25,8 @@ class MembershipType extends Model
 		'enddate',
 		'months',
 		'weeks',
-		'status'
+		'status',
+        'active'
 	];
 
 	protected $with = [

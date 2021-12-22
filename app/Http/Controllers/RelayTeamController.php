@@ -10,6 +10,7 @@ use App\PasswordGenerationWord;
 use App\AgeGroup;
 use App\PayPalPayment;
 use App\RelayPayment;
+use App\RelayPending;
 use Illuminate\Http\Request;
 
 use App\Club;
@@ -466,10 +467,94 @@ class RelayTeamController extends Controller
     }
 
     public function receiveGuestPayment($meetId) {
-        return response()->json([
-            'success' => true,
-            'paypal_payment' => null,
-            'message' => 'Guest Relay Payment received.'
-        ], 200);
+
+        $paymentDetails = $this->request->all();
+
+        $relayPending = new RelayPending();
+        $relayPending->meet_id = $paymentDetails['meetId'];
+        $relayPending->event_id = $paymentDetails['relayEvent'];
+        $relayPending->status = 1;  // Set pending status
+
+        if (isset($this->user)) {
+            $relayPending->submited_by_user = $this->user->id;
+        }
+
+        $relayPending->relay_data = json_encode($paymentDetails);
+
+        $relayPending->paid = 0;
+        $paypalPayment = new PayPalPayment();
+
+        $test = 1;
+        $purchaseUnits = array();
+        $amount = array();
+
+        // Check if relay has been paid
+        if (array_key_exists('paymentData', $paymentDetails)) {
+            $paypalInfo = $paymentDetails['paymentData'];
+
+            $id = $paypalInfo['id'];
+            $payerName = '';
+
+            if (array_key_exists('payer', $paypalInfo)) {
+                $payer = $paypalInfo['payer'];
+                $payerEmail = $payer['email_address'];
+                $paypalPayment->payer_email = $payerEmail;
+                if (array_key_exists('name', $payer)) {
+                    $nameArr = $payer['name'];
+                    $payerName = $nameArr['given_name'] . ' ' . $nameArr['surname'];
+                    $paypalPayment->payer_name = $payerName;
+                }
+            }
+
+            if (array_key_exists('status', $paypalInfo) && $paypalInfo['status'] == 'COMPLETED') {
+                if (array_key_exists('purchase_units', $paypalInfo)) {
+                    $purchaseUnits = $paymentDetails['purchase_units'];
+                    if (count($purchaseUnits) > 0) {
+                        $purchaseUnit = $purchaseUnits[0];
+                        $items = $purchaseUnit['items'];
+                        if (count($items) > 0) {
+                            $item = $items[0];
+                            $qty = intval($item['quantity']);
+                        }
+
+                        $amount = $purchaseUnit['amount'];
+                        $amountPaid = floatval($amount['value']);
+                        $paypalPayment->paid = $amountPaid;
+                        $relayPending->paid = $amountPaid;
+                    }
+                }
+            }
+
+        }
+
+        $relayPending->save();
+
+        $paypalPayment->relay_pending_id = $relayPending->id;
+
+        // Update payment details
+        if ($paypalPayment->paid > 0) {
+            $paypalPayment->save();
+            $relayPending->paypal_payment_id = $paypalPayment->id;
+            $relayPending->save();
+
+            return response()->json([
+                'success' => true,
+                'relay' => $relayPending,
+                'paypal_payment' => $test,
+                'test' => $purchaseUnits,
+                'message' => 'Guest Relay nomination received.'
+            ], 200);
+        } else {
+            return response()->json([
+                'success' => true,
+                'relay' => $relayPending,
+                'status' => $paypalInfo['status'],
+                'paypal_payment' => $paypalPayment,
+                'test' => $purchaseUnits,
+                'message' => 'Guest Relay received.'
+            ], 200);
+        }
+
+
     }
 }

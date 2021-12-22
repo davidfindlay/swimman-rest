@@ -15,15 +15,18 @@ use App\MeetEvent;
 
 use App\MeetPaymentMethod;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use mysql_xdevapi\Exception;
 
-class MeetController extends Controller {
+class MeetController extends Controller
+{
 
     private $request;
     private $userId;
     private $user;
 
-    public function __construct(Request $request) {
+    public function __construct(Request $request)
+    {
         $this->request = $request;
         $user = $this->request->user();
         if ($user != NULL) {
@@ -34,19 +37,19 @@ class MeetController extends Controller {
         }
     }
 
-	public function showCurrentMeets(Request $request)
-	{
+    public function showCurrentMeets(Request $request)
+    {
 
 //		$year = $request->input('year');
-		$year = date('Y');
+        $year = date('Y');
 
-		if (isset($year)) {
+        if (isset($year)) {
 
-			$meets = Meet::whereYear('startdate', $year)->get();
+            $meets = Meet::whereYear('startdate', $year)->get();
 
-			foreach($meets as $m) {
+            foreach ($meets as $m) {
 
-			    $meetEvents = $m->events;
+                $meetEvents = $m->events;
 
                 foreach ($meetEvents as $e) {
                     $eventDistance = $e->distance;
@@ -84,21 +87,21 @@ class MeetController extends Controller {
                     $m->images;
                 }
 
-			}
+            }
 
-			return response()->json($meets);
+            return response()->json($meets);
 
-		}
+        }
 
-		return response()->json(Meet::all());
-	}
+        return response()->json(Meet::all());
+    }
 
-	public function showOneMeet($id)
-	{
+    public function showOneMeet($id)
+    {
 
-		$meetDetails = Meet::find($id);
+        $meetDetails = Meet::find($id);
 
-		if ($meetDetails == null) {
+        if ($meetDetails == null) {
             return response()->json([
                 'success' => false,
                 'meet_id' => $id,
@@ -106,16 +109,16 @@ class MeetController extends Controller {
             ], 404);
         }
 
-		$meetEvents = $meetDetails->events;
+        $meetEvents = $meetDetails->events;
 
-		foreach ($meetEvents as $m) {
-		    $eventDistance = $m->distance;
-		    $eventDiscipline = $m->discipline;
+        foreach ($meetEvents as $m) {
+            $eventDistance = $m->distance;
+            $eventDiscipline = $m->discipline;
         }
 
-		$meetEventGroups = $meetDetails->groups;
+        $meetEventGroups = $meetDetails->groups;
 
-		// TODO: only supply this is admin user accessing
+        // TODO: only supply this is admin user accessing
         if ($this->user && $this->user->is_admin) {
             $access = $meetDetails->access;
             foreach ($access as $a) {
@@ -123,22 +126,22 @@ class MeetController extends Controller {
             }
         }
 
-		$email = $meetDetails->email;
-		$phone = $meetDetails->phone;
-		if (isset($email)) {
+        $email = $meetDetails->email;
+        $phone = $meetDetails->phone;
+        if (isset($email)) {
             $emailaddress = $email->address;
         }
 
-		$meetDetails['sessions'] = $meetDetails->sessions;
+        $meetDetails['sessions'] = $meetDetails->sessions;
 
-		if (count($meetDetails->sessions) == 0) {
+        if (count($meetDetails->sessions) == 0) {
             $meetDetails['events'] = $meetEvents;
         }
 
-		foreach ($meetEventGroups as $g) {
-		    $g['rules'] = $g->rules;
-		    $g['events'] = $g->events;
-		}
+        foreach ($meetEventGroups as $g) {
+            $g['rules'] = $g->rules;
+            $g['events'] = $g->events;
+        }
 
         $meetPaymentMethods = $meetDetails->paymentTypes;
 
@@ -151,26 +154,27 @@ class MeetController extends Controller {
             $m->images;
         }
 
-		return response()->json($meetDetails);
-	}
+        return response()->json($meetDetails);
+    }
 
-	public function getAllMeets()
+    public function getAllMeets()
     {
         $meets = Meet::orderBy('startdate', 'asc')->get();
         return response()->json($meets);
     }
 
-	public function getEvents($id)
-	{
-		return response()->json(Meet::find($id)->events);
-	}
+    public function getEvents($id)
+    {
+        return response()->json(Meet::find($id)->events);
+    }
 
-	public function getEventGroups($id)
-	{
-		return response()->json(Meet::find($id)->groups);
-	}
+    public function getEventGroups($id)
+    {
+        return response()->json(Meet::find($id)->groups);
+    }
 
-	private function getMeetFromArray($meet, $m) {
+    private function getMeetFromArray($meet, $m)
+    {
         $meet->meetname = $m['meetname'];
 
         if (strpos($m['startdate'], '/') !== false) {
@@ -292,7 +296,8 @@ class MeetController extends Controller {
         return $meet;
     }
 
-	public function createMeet() {
+    public function createMeet()
+    {
         $meet = new Meet();
         $m = $this->request->all();
 
@@ -312,7 +317,8 @@ class MeetController extends Controller {
 
     }
 
-    public function updateMeet($id) {
+    public function updateMeet($id)
+    {
         $meet = Meet::find($id);
         $m = $this->request->all();
 
@@ -332,7 +338,8 @@ class MeetController extends Controller {
 
     }
 
-    public function publishMeet($id) {
+    public function publishMeet($id)
+    {
         $meet = Meet::find($id);
         $m = $this->request->all();
 
@@ -365,7 +372,8 @@ class MeetController extends Controller {
             'meet' => $meet], 200);
     }
 
-    public function addPaymentMethod($id) {
+    public function addPaymentMethod($id)
+    {
 
         $meet = Meet::find($id);
         $m = $this->request->all();
@@ -397,7 +405,8 @@ class MeetController extends Controller {
 
     }
 
-    public function removePaymentMethod($id) {
+    public function removePaymentMethod($id)
+    {
 
         $meet = Meet::find($id);
         $m = $this->request->all();
@@ -419,7 +428,7 @@ class MeetController extends Controller {
         $paymentMethod = MeetPaymentMethod::where([
             ['meet_id', '=', intval($id)],
             ['payment_type_id', '=', $m['removePaymentMethod']]
-            ])->delete();
+        ])->delete();
 
         return response()->json([
             'success' => true,
@@ -428,7 +437,8 @@ class MeetController extends Controller {
 
     }
 
-    public function updateEvent($id, $eventId) {
+    public function updateEvent($id, $eventId)
+    {
         $meet = Meet::find($id);
         $m = $this->request->all();
 
@@ -494,7 +504,8 @@ class MeetController extends Controller {
 
     }
 
-    public function addAccess($id) {
+    public function addAccess($id)
+    {
         $meet = Meet::find($id);
         $m = $this->request->all();
 
@@ -526,8 +537,8 @@ class MeetController extends Controller {
                 'message' => 'Meet Access updated.',
                 'meetAccess' => $access], 200);
         } catch (Exception $e) {
-                return response()->json(['success' => false,
-                    'message' => 'Unable to add meet access : ' . $e->getMessage()], 400);
+            return response()->json(['success' => false,
+                'message' => 'Unable to add meet access : ' . $e->getMessage()], 400);
         }
 
     }
@@ -569,4 +580,80 @@ class MeetController extends Controller {
 
     }
 
+    public function getMeetReport()
+    {
+        $msqMembers = DB::Select(DB::raw('SELECT DISTINCT(member_entry_count.entry_count) as num_meets, COUNT(*) as msq_entries FROM (
+(SELECT DISTINCT(meet_entries.member_id), COUNT(*) as entry_count FROM meet_entries, member WHERE meet_id IN (
+    SELECT id FROM meet WHERE startdate > \'2021-01-01\' AND startdate < \'2021-12-31\'
+)
+AND member.id = meet_entries.member_id
+AND SUBSTR(member.number, 1, 1) != \'X\'
+AND member_id NOT IN (
+    SELECT DISTINCT(meet_entries.member_id) FROM meet_entries, member, member_memberships, clubs WHERE meet_id IN (
+    SELECT id FROM meet WHERE startdate > \'2021-01-01\' AND startdate < \'2021-12-31\'
+)
+AND member.id = meet_entries.member_id
+AND SUBSTR(member.number, 1, 1) != \'X\'
+AND member.id = member_memberships.member_id
+AND clubs.id = member_memberships.club_id
+AND member.id NOT IN (
+    SELECT member.id FROM member, member_memberships, clubs
+WHERE member.id = member_memberships.member_id
+AND clubs.id = member_memberships.club_id
+AND member_memberships.enddate > \'2021-01-01\' AND member_memberships.enddate <= \'2021-12-31\'
+AND SUBSTR(clubs.code, 1, 1) = \'Q\'
+        )
+        )
+GROUP BY meet_entries.member_id) as member_entry_count)
+GROUP BY member_entry_count.entry_count
+ORDER BY member_entry_count.entry_count ASC;'));
+
+        $allComers = DB::Select(DB::raw('SELECT DISTINCT(member_entry_count.entry_count) as num_meets, COUNT(*) as all_entries FROM (
+(SELECT DISTINCT(meet_entries.member_id), COUNT(*) as entry_count FROM meet_entries, member WHERE meet_id IN (
+    SELECT id FROM meet WHERE startdate > \'2021-01-01\' AND startdate < \'2021-12-31\'
+)
+AND member.id = meet_entries.member_id
+AND SUBSTR(member.number, 1, 1) != \'X\'
+AND member_id NOT IN (
+    SELECT DISTINCT(meet_entries.member_id) FROM meet_entries, member, member_memberships, clubs WHERE meet_id IN (
+    SELECT id FROM meet WHERE startdate > \'2021-01-01\' AND startdate < \'2021-12-31\'
+)
+AND member.id = meet_entries.member_id
+AND SUBSTR(member.number, 1, 1) != \'X\'
+AND member.id = member_memberships.member_id
+AND clubs.id = member_memberships.club_id
+AND member.id NOT IN (
+    SELECT member.id FROM member, member_memberships, clubs
+WHERE member.id = member_memberships.member_id
+AND clubs.id = member_memberships.club_id
+AND member_memberships.enddate > \'2021-01-01\' AND member_memberships.enddate <= \'2021-12-31\'
+AND SUBSTR(clubs.code, 1, 1) = \'Q\'
+        )
+        )
+GROUP BY meet_entries.member_id) as member_entry_count)
+GROUP BY member_entry_count.entry_count
+ORDER BY member_entry_count.entry_count ASC;'));
+
+        return response()->json(['success' => true,
+            'report' => $testData]);
+    }
+
+    public function getMeetEntryInfo() {
+        $ids = explode(',', $this->request->input('meets'));
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $entryCounts = DB::Select(DB::raw("SELECT id, meetname, status, startdate, deadline,
+            (SELECT COUNT(*) FROM meet_entries WHERE meet.id = meet_entries.meet_id AND meet_entries.cancelled != 1) as entries,
+            (SELECT COUNT(*) FROM meet_entries_incomplete, meet_entry_status_codes
+       WHERE meet.id = meet_entries_incomplete.meet_id
+         AND meet_entries_incomplete.finalised_at IS NULL
+           AND meet_entries_incomplete.status_id = meet_entry_status_codes.id
+           AND meet_entry_status_codes.cancelled != 1) as pending,
+            (SELECT COUNT(*) FROM meet_access WHERE meet.id = meet_access.meet_id) as access
+            FROM meet WHERE id IN ($placeholders) ORDER BY startdate ASC;"), $ids);
+
+        return response()->json(['success' => true,
+            'meets' => $entryCounts
+        ]);
+    }
 }
