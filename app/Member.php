@@ -32,7 +32,7 @@ class Member extends Model
 	protected $hidden = [];
 
 	// Existing table, no timestamps
-	public $timestamps = false;
+	public $timestamps = true;
 
 	public function jUsers() {
 		return $this->hasMany('App\JUserLink', 'member_id   ', 'id');

@@ -24,6 +24,7 @@ use App\MeetEntryStatusCode;
 use App\MeetEntryOrderItem;
 use App\MeetMerchandise;
 use App\Member;
+use App\Membership;
 use App\Meet;
 use App\Club;
 use App\AgeGroup;
@@ -464,6 +465,38 @@ class MeetEntryController extends Controller {
         // Determine entry cost
         $meetDetails = Meet::where('id', '=', $entryData->meetId)->first();
         $meetEntry->cost = $this->calculateEntryFee($meetEntry, $entryData, $meetDetails);
+
+        // Is member financial
+        $membership = Membership::where([['member_id', '=', $member->id],
+            ['club_id', '=', $entryData->club_id],
+            ['startdate', '<=', $meetDetails->startdate],
+            ['enddate', '>=', $meetDetails->startdate]])->get();
+
+        if (!isset($membership)) {
+            // Member is not financial in this club
+            $pendingStatus = MeetEntryStatusCode::where('label', '=', 'Pending')->first();
+            $entry->status_id = $pendingStatus->id;
+            $pendingReason = 'Member is not currently financial for this club, please check membership status.';
+            $entry->pending_reason = $pendingReason;
+            $entry->saveOrFail();
+
+            // Send confirmation email
+            if (!property_exists($entryData, 'no_email') || !isset($entryData->no_email) || !$entryData->no_email) {
+                try {
+                    $this->pendingEmail($entry);
+                } catch (Exception $e) {
+                    \Sentry\captureMessage('Exception when sending pending email: ' . $e->getMessage());
+                }
+            }
+
+            $entry->entrydata = json_decode($entry->entrydata, true);
+            $entry->status;
+            return response()->json(['pending_entry' => $entry,
+                'status_id' => $pendingStatus->id,
+                'explanation' => $pendingReason,
+                'status_label' => $pendingStatus->label,
+                'status_description' => $pendingStatus->description], 200);
+        }
 
         // Disability
         $classified = 0;

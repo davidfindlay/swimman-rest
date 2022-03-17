@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class AddRelayPendingToPaypalPayment extends Migration
+class AlterMember extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,9 @@ class AddRelayPendingToPaypalPayment extends Migration
      */
     public function up()
     {
-        Schema::table('paypal_payment', function (Blueprint $table) {
-            $table->unsignedInteger('relay_pending_id')->nullable();
+        Schema::table('member', function (Blueprint $table) {
+            $table->dateTime('created_at')->nullable();
+            $table->dateTime('updated_at')->nullable();
         });
     }
 
@@ -25,8 +26,9 @@ class AddRelayPendingToPaypalPayment extends Migration
      */
     public function down()
     {
-        Schema::table('paypal_payment', function (Blueprint $table) {
-            $table->dropColumn('relay_pending_id');
+        Schema::table('member', function (Blueprint $table) {
+            $table->dropColumn('created_at');
+            $table->dropColumn('updated_at');
         });
     }
 }

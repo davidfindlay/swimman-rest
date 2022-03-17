@@ -117,5 +117,12 @@ $router->group(['prefix' => 'api'], function () use ($router) {
     $router->post('members/search', ['middleware' => 'auth:api', 'uses' => 'MemberController@findMember']);
 
     $router->get('membership/types', ['middleware' => 'auth:api', 'uses' => 'MembershipTypeController@getMembershipTypes']);
+    $router->post('membership/types', ['middleware' => 'auth:api', 'uses' => 'MembershipTypeController@createMembershipType']);
+    $router->put('membership/types/{id}', ['middleware' => 'auth:api', 'uses' => 'MembershipTypeController@editMembershipType']);
 
+    $router->get('membership/imports', ['middleware' => 'auth:api', 'uses' => 'MembershipImportController@getImports']);
+    $router->post('membership/autoImport', ['middleware' => 'auth:api', 'uses' => 'MembershipImportController@autoImport']);
+    $router->post('membership/import/status', ['middleware' => 'auth:api', 'uses' => 'MembershipImportController@importLogMessage']);
+
+    $router->get('membership/sportstg', ['middleware' => 'auth:api', 'uses' => 'SportsTGController@getMembers']);
 });
